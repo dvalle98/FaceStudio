@@ -1,0 +1,33 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: procesador-imagenes:latest
+    container_name: procesador-imagenes
+    ports:
+      - "8001:8001"
+    volumes:
+      # Ambas carpetas viven en el repositorio clonado en el servidor.
+      # El contenedor las monta pero nunca las contiene.
+      # Antes del primer `docker compose up`, corre una vez: python setup_modelos.py
+      - ./storage:/app/storage
+      - ./modelos:/app/modelos
+    environment:
+      - PYTHONUNBUFFERED=1
+      # STORAGE_PATH le dice a la app dónde escribir dentro del contenedor.
+      # Debe coincidir con la ruta DERECHA del bind mount de arriba.
+      - STORAGE_PATH=/app/storage
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')",
+        ]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3

@@ -1,0 +1,22 @@
+# evitar subir archivos de configuración de entorno.env
+.env
+venv/
+# ignorar archivos de configuración de IDE
+.vscode/
+.idea/
+# ignorar archivos de dependencias
+node_modules/
+# ignorar archivos de construccióndist/
+build/
+
+# ignorar el contenido de la carpeta modelos
+modelos/*
+# ignorar todo el contenido de las carpetas que almacenan imagenes
+imagenes-entrada/
+imagenes-salida/
+
+# ignorar carpeta de almacenamiento 
+storage/projects/*
+storage/entrada/*
+storage/salida/*
+storage/zips/*

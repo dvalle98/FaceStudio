@@ -1,0 +1,2133 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FaceStudio — Procesador de imágenes</title>
+    <style>
+      /* ── Reset y base ───────────────────────────────────────────────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --blue: #185fa5;
+        --blue-light: #e6f1fb;
+        --blue-mid: #b5d4f4;
+        --blue-text: #0c447c;
+        --green: #3b6d11;
+        --green-light: #eaf3de;
+        --green-text: #27500a;
+        --amber: #854f0b;
+        --amber-light: #faeeda;
+        --amber-text: #633806;
+        --red: #a32d2d;
+        --red-light: #fcebeb;
+        --red-text: #791f1f;
+        --gray-50: #f1efe8;
+        --gray-100: #d3d1c7;
+        --gray-400: #888780;
+        --gray-600: #5f5e5a;
+        --gray-900: #2c2c2a;
+        --text: #1a1a1a;
+        --text-2: #555;
+        --text-3: #888;
+        --border: rgba(0, 0, 0, 0.1);
+        --border-2: rgba(0, 0, 0, 0.18);
+        --bg: #f5f6f8;
+        --surface: #ffffff;
+        --surface-2: #f5f6f8;
+        --radius: 10px;
+        --radius-sm: 6px;
+      }
+      html {
+        font-size: 15px;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        line-height: 1.5;
+      }
+
+      /* ── Topbar ─────────────────────────────────────────────────────────── */
+      .topbar {
+        background: var(--surface);
+        border-bottom: 0.5px solid var(--border);
+        padding: 0 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 56px;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .logo-icon {
+        width: 32px;
+        height: 32px;
+        background: var(--blue);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .logo-name {
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .logo-sub {
+        font-size: 11px;
+        color: var(--text-3);
+        margin-top: -1px;
+      }
+      .nav {
+        display: flex;
+        gap: 4px;
+      }
+      .nav-btn {
+        font-size: 13px;
+        padding: 6px 14px;
+        border-radius: var(--radius-sm);
+        border: 0.5px solid transparent;
+        background: transparent;
+        color: var(--text-2);
+        cursor: pointer;
+        font-family: inherit;
+        transition: background 0.15s;
+      }
+      .nav-btn:hover {
+        background: var(--surface-2);
+      }
+      .nav-btn.active {
+        background: var(--surface);
+        border-color: var(--border-2);
+        color: var(--text);
+        font-weight: 500;
+      }
+
+      /* ── Layout ─────────────────────────────────────────────────────────── */
+      .page {
+        display: none;
+        padding: 1.75rem 2rem 3rem;
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+      .page.active {
+        display: block;
+      }
+      .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+        align-items: start;
+      }
+      .three-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0.75rem;
+      }
+
+      /* ── Tarjetas ───────────────────────────────────────────────────────── */
+      .card {
+        background: var(--surface);
+        border: 0.5px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+      }
+      .card:last-child {
+        margin-bottom: 0;
+      }
+      .card-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        color: var(--text);
+      }
+
+      /* ── Zona de carga ──────────────────────────────────────────────────── */
+      .upload-zone {
+        border: 1.5px dashed var(--border-2);
+        border-radius: var(--radius);
+        padding: 2rem 1rem;
+        text-align: center;
+        cursor: pointer;
+        transition:
+          border-color 0.2s,
+          background 0.2s;
+        background: var(--surface);
+      }
+      .upload-zone:hover,
+      .upload-zone.drag {
+        border-color: var(--blue);
+        background: var(--blue-light);
+      }
+      .upload-zone input {
+        display: none;
+      }
+      .upload-icon {
+        width: 44px;
+        height: 44px;
+        background: var(--blue-light);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 12px;
+      }
+      .upload-title {
+        font-size: 15px;
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+      .upload-sub {
+        font-size: 12px;
+        color: var(--text-3);
+        margin-bottom: 10px;
+      }
+      .upload-tag {
+        display: inline-block;
+        background: var(--blue-light);
+        color: var(--blue-text);
+        font-size: 11px;
+        padding: 3px 10px;
+        border-radius: 4px;
+        font-weight: 500;
+      }
+      .upload-info {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: var(--text-3);
+        margin-top: 0.625rem;
+        padding: 0 2px;
+      }
+
+      /* ── Selector de modo ───────────────────────────────────────────────── */
+      .mode-option {
+        border: 0.5px solid var(--border);
+        border-radius: var(--radius);
+        padding: 0.875rem 0.75rem;
+        text-align: center;
+        cursor: pointer;
+        transition:
+          border-color 0.2s,
+          background 0.2s;
+        background: var(--surface);
+        user-select: none;
+      }
+      .mode-option:hover {
+        border-color: var(--blue-mid);
+        background: #fafbff;
+      }
+      .mode-option.selected {
+        border: 2px solid var(--blue);
+        background: var(--blue-light);
+      }
+      .mode-icon-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 8px;
+        width: 52px;
+        height: 64px;
+        border: 1.5px solid var(--border-2);
+        border-radius: var(--radius-sm);
+        background: var(--surface-2);
+      }
+      .mode-option.selected .mode-icon-wrap {
+        border-color: var(--blue);
+        background: #ddeef9;
+      }
+      .mode-icon-wrap.square {
+        width: 56px;
+        height: 56px;
+      }
+      .mode-icon-wrap.wide {
+        width: 72px;
+        height: 52px;
+      }
+      .mode-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .mode-dim {
+        font-size: 11px;
+        color: var(--text-3);
+        margin-top: 2px;
+      }
+      .mode-badge {
+        display: inline-block;
+        font-size: 10px;
+        padding: 2px 7px;
+        border-radius: 20px;
+        margin-top: 5px;
+        font-weight: 500;
+      }
+      .badge-blue {
+        background: var(--blue-light);
+        color: var(--blue-text);
+      }
+      .badge-gray {
+        background: var(--gray-50);
+        color: var(--gray-600);
+      }
+      .badge-green {
+        background: var(--green-light);
+        color: var(--green-text);
+      }
+
+      /* ── Opciones avanzadas ─────────────────────────────────────────────── */
+      .advanced-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        margin: 1rem 0 0;
+        user-select: none;
+      }
+      .adv-line {
+        flex: 1;
+        height: 0.5px;
+        background: var(--border);
+      }
+      .adv-label {
+        font-size: 11px;
+        color: var(--text-3);
+        white-space: nowrap;
+      }
+      .adv-arrow {
+        font-size: 11px;
+        color: var(--text-3);
+        transition: transform 0.2s;
+      }
+      .adv-arrow.open {
+        transform: rotate(90deg);
+      }
+      .advanced-body {
+        display: none;
+        margin-top: 0.875rem;
+      }
+      .advanced-body.open {
+        display: block;
+      }
+
+      /* ── Campos ─────────────────────────────────────────────────────────── */
+      .field-label {
+        font-size: 11px;
+        color: var(--text-2);
+        margin-bottom: 4px;
+        font-weight: 500;
+      }
+      .field-input {
+        width: 100%;
+        padding: 7px 10px;
+        border: 0.5px solid var(--border-2);
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-family: inherit;
+        background: var(--surface);
+        color: var(--text);
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      .field-input:focus {
+        border-color: var(--blue);
+      }
+      .input-row {
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+      }
+      .input-sep {
+        font-size: 13px;
+        color: var(--text-3);
+        padding-bottom: 8px;
+      }
+
+      /* ── Botones ────────────────────────────────────────────────────────── */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 9px 18px;
+        border-radius: var(--radius-sm);
+        font-size: 14px;
+        font-weight: 500;
+        font-family: inherit;
+        cursor: pointer;
+        border: none;
+        transition:
+          opacity 0.15s,
+          transform 0.1s;
+      }
+      .btn:active {
+        transform: scale(0.98);
+      }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .btn-primary {
+        background: var(--blue);
+        color: white;
+        width: 100%;
+      }
+      .btn-primary:hover:not(:disabled) {
+        background: #145290;
+      }
+      .btn-success {
+        background: var(--green);
+        color: white;
+        flex: 1;
+      }
+      .btn-success:hover:not(:disabled) {
+        background: #2f5a0e;
+      }
+      .btn-outline {
+        background: var(--surface);
+        color: var(--text);
+        border: 0.5px solid var(--border-2);
+      }
+      .btn-outline:hover {
+        background: var(--surface-2);
+      }
+      .btn-danger {
+        background: var(--red-light);
+        color: var(--red-text);
+        border: 0.5px solid var(--red-light);
+      }
+      .btn-danger:hover {
+        background: #f7c1c1;
+      }
+      .btn-sm {
+        font-size: 12px;
+        padding: 5px 12px;
+      }
+
+      /* ── Barra de progreso ──────────────────────────────────────────────── */
+      .progress-wrap {
+        height: 6px;
+        background: var(--surface-2);
+        border-radius: 3px;
+        overflow: hidden;
+        margin: 0.5rem 0;
+      }
+      .progress-fill {
+        height: 100%;
+        border-radius: 3px;
+        background: var(--blue);
+        transition: width 0.4s ease;
+      }
+      .progress-fill.done {
+        background: var(--green);
+      }
+
+      /* ── Stats ──────────────────────────────────────────────────────────── */
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin: 0.75rem 0;
+      }
+      .stat-box {
+        background: var(--surface-2);
+        border-radius: var(--radius-sm);
+        padding: 0.625rem 0.75rem;
+      }
+      .stat-val {
+        font-size: 22px;
+        font-weight: 600;
+        line-height: 1;
+      }
+      .stat-lbl {
+        font-size: 11px;
+        color: var(--text-3);
+        margin-top: 3px;
+      }
+      .stat-blue {
+        color: var(--blue);
+      }
+      .stat-green {
+        color: var(--green);
+      }
+      .stat-amber {
+        color: var(--amber);
+      }
+      .stat-red {
+        color: var(--red);
+      }
+
+      /* ── Status pills ───────────────────────────────────────────────────── */
+      .pill {
+        font-size: 11px;
+        font-weight: 500;
+        padding: 3px 10px;
+        border-radius: 20px;
+        white-space: nowrap;
+      }
+      .pill-proc {
+        background: var(--blue-light);
+        color: var(--blue-text);
+      }
+      .pill-done {
+        background: var(--green-light);
+        color: var(--green-text);
+      }
+      .pill-pend {
+        background: var(--gray-50);
+        color: var(--gray-600);
+      }
+      .pill-err {
+        background: var(--red-light);
+        color: var(--red-text);
+      }
+
+      /* ── Miniaturas ─────────────────────────────────────────────────────── */
+      .thumb-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 12px;
+        margin: 0.75rem 0;
+        max-height: 720px;
+        overflow-y: auto;
+        padding: 12px;
+        padding-right: 12px;
+      }
+      .thumb-grid::-webkit-scrollbar {
+        width: 8px;
+      }
+      .thumb-grid::-webkit-scrollbar-track {
+        background: var(--surface-2);
+        border-radius: 4px;
+      }
+      .thumb-grid::-webkit-scrollbar-thumb {
+        background: var(--gray-400);
+        border-radius: 4px;
+      }
+      .thumb-grid::-webkit-scrollbar-thumb:hover {
+        background: var(--gray-600);
+      }
+      .thumb {
+        aspect-ratio: 1;
+        border-radius: var(--radius-sm);
+        border: 0.5px solid var(--border);
+        background: var(--surface-2);
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .thumb-dot {
+        position: absolute;
+        bottom: 3px;
+        right: 3px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1.5px solid white;
+      }
+      .dot-ok {
+        background: var(--green);
+      }
+      .dot-rev {
+        background: var(--amber);
+      }
+      .dot-err {
+        background: var(--red);
+      }
+      .thumb-err-bg {
+        background: var(--red-light);
+        border-color: #f09595;
+      }
+
+      /* ── Lista de lotes ─────────────────────────────────────────────────── */
+      .lote-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 0;
+        border-bottom: 0.5px solid var(--border);
+      }
+      .lote-row:last-child {
+        border-bottom: none;
+      }
+      .lote-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .lote-name {
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .lote-meta {
+        font-size: 11px;
+        color: var(--text-3);
+        margin-top: 2px;
+      }
+      .lote-actions {
+        display: flex;
+        gap: 5px;
+        flex-shrink: 0;
+      }
+
+      /* ── Alerta ─────────────────────────────────────────────────────────── */
+      .alert {
+        border-radius: var(--radius-sm);
+        padding: 0.625rem 0.875rem;
+        font-size: 12.5px;
+        margin: 0.625rem 0;
+      }
+      .alert-amber {
+        background: var(--amber-light);
+        color: var(--amber-text);
+      }
+      .alert-red {
+        background: var(--red-light);
+        color: var(--red-text);
+      }
+      .alert-green {
+        background: var(--green-light);
+        color: var(--green-text);
+      }
+      .alert-blue {
+        background: var(--blue-light);
+        color: var(--blue-text);
+      }
+
+      /* ── Leyenda miniaturas ─────────────────────────────────────────────── */
+      .thumb-legend {
+        display: flex;
+        gap: 12px;
+        font-size: 11px;
+        color: var(--text-3);
+        margin-top: 0.375rem;
+      }
+      .legend-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 4px;
+        vertical-align: middle;
+      }
+
+      /* ── Info rows ──────────────────────────────────────────────────────── */
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 0;
+        font-size: 12.5px;
+      }
+      .info-key {
+        color: var(--text-2);
+      }
+      .info-val {
+        font-weight: 500;
+      }
+
+      /* ── Divider ────────────────────────────────────────────────────────── */
+      .divider {
+        height: 0.5px;
+        background: var(--border);
+        margin: 0.875rem 0;
+      }
+
+      /* ── Buscador ───────────────────────────────────────────────────────── */
+      .search-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+      }
+      .search-input {
+        padding: 7px 12px 7px 32px;
+        border: 0.5px solid var(--border-2);
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-family: inherit;
+        background: var(--surface-2);
+        color: var(--text);
+        outline: none;
+        width: 220px;
+        position: relative;
+      }
+
+      /* ── Toast ──────────────────────────────────────────────────────────── */
+      #toast {
+        position: fixed;
+        bottom: 1.5rem;
+        left: 50%;
+        transform: translateX(-50%) translateY(80px);
+        background: var(--gray-900);
+        color: white;
+        padding: 10px 20px;
+        border-radius: var(--radius);
+        font-size: 13px;
+        z-index: 999;
+        opacity: 0;
+        transition:
+          opacity 0.25s,
+          transform 0.25s;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+      #toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+      #toast.error {
+        background: var(--red);
+      }
+      #toast.success {
+        background: var(--green);
+      }
+
+      /* ── Spinner ────────────────────────────────────────────────────────── */
+      .spinner {
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        display: inline-block;
+        vertical-align: middle;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ── Empty state ────────────────────────────────────────────────────── */
+      .empty {
+        text-align: center;
+        padding: 2.5rem 1rem;
+        color: var(--text-3);
+      }
+      .empty-icon {
+        font-size: 32px;
+        margin-bottom: 8px;
+      }
+      .empty-text {
+        font-size: 14px;
+      }
+      .empty-sub {
+        font-size: 12px;
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ══ TOPBAR ══════════════════════════════════════════════════════════ -->
+    <header class="topbar">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <rect
+              x="1"
+              y="1"
+              width="7"
+              height="8"
+              rx="1.5"
+              fill="white"
+              opacity=".9"
+            />
+            <rect
+              x="10"
+              y="1"
+              width="7"
+              height="7"
+              rx="1.5"
+              fill="white"
+              opacity=".9"
+            />
+            <rect
+              x="1"
+              y="11"
+              width="7"
+              height="6"
+              rx="1.5"
+              fill="white"
+              opacity=".6"
+            />
+            <rect
+              x="10"
+              y="10"
+              width="7"
+              height="7"
+              rx="1.5"
+              fill="white"
+              opacity=".6"
+            />
+          </svg>
+        </div>
+        <div>
+          <div class="logo-name">FotoProcess</div>
+          <div class="logo-sub">Procesador de imágenes</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <button class="nav-btn active" onclick="pag_nuevoLote()">
+          Nuevo lote
+        </button>
+        <button class="nav-btn" onclick="showPage('lotes')">Mis lotes</button>
+      </nav>
+    </header>
+
+    <!-- ══ PÁGINA: NUEVO LOTE ══════════════════════════════════════════════ -->
+    <main class="page active" id="page-nuevo">
+      <div class="two-col">
+        <!-- Columna izquierda -->
+        <div>
+          <!-- Nombre del lote -->
+          <div class="card">
+            <div class="card-title">1. Nombre del lote</div>
+            <div class="field-label">
+              Generado automáticamente — puedes cambiarlo
+            </div>
+            <input
+              class="field-input"
+              id="input-nombre"
+              style="margin-top: 4px"
+            />
+          </div>
+
+          <!-- Zona de carga -->
+          <div class="card">
+            <div class="card-title">2. Sube tus fotos</div>
+            <div
+              class="upload-zone"
+              id="upload-zone"
+              onclick="document.getElementById('file-input').click()"
+            >
+              <input
+                type="file"
+                id="file-input"
+                multiple
+                accept=".jpg,.jpeg,.png,.bmp,.webp"
+              />
+              <div class="upload-icon">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path
+                    d="M10 3v10M6 7l4-4 4 4"
+                    stroke="#185FA5"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M3 14v1a2 2 0 002 2h10a2 2 0 002-2v-1"
+                    stroke="#185FA5"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </div>
+              <div class="upload-title">Arrastra tus fotos aquí</div>
+              <div class="upload-sub">
+                o haz clic para seleccionarlas desde tu computador
+              </div>
+              <div class="upload-tag">
+                JPG · PNG · BMP · WEBP · máx 20 MB por foto
+              </div>
+            </div>
+            <div class="upload-info">
+              <span id="upload-count">0 fotos seleccionadas</span>
+              <span id="upload-size">0 MB</span>
+            </div>
+            <!-- Lista de archivos seleccionados (máx 5 visibles) -->
+            <div id="file-list" style="margin-top: 0.5rem; display: none"></div>
+          </div>
+        </div>
+
+        <!-- Columna derecha -->
+        <div>
+          <!-- Tipo de procesamiento -->
+          <div class="card">
+            <div class="card-title">3. Tipo de procesamiento</div>
+            <div class="three-col" style="margin-top: 0.5rem">
+              <!-- Modo A: carnet -->
+              <div
+                class="mode-option selected"
+                data-mode="A"
+                onclick="selectMode(this)"
+              >
+                <div class="mode-icon-wrap">
+                  <svg width="18" height="22" viewBox="0 0 18 22" fill="none">
+                    <rect
+                      x="1"
+                      y="1"
+                      width="16"
+                      height="20"
+                      rx="2"
+                      stroke="#185FA5"
+                      stroke-width="1.5"
+                    />
+                    <circle
+                      cx="9"
+                      cy="8"
+                      r="3.5"
+                      stroke="#185FA5"
+                      stroke-width="1.3"
+                    />
+                    <path
+                      d="M3 19c0-3.31 2.69-6 6-6s6 2.69 6 6"
+                      stroke="#185FA5"
+                      stroke-width="1.3"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </div>
+                <div class="mode-name">Foto carnet</div>
+                <div class="mode-dim" id="dim-A">640 × 800 px</div>
+                <div class="mode-badge badge-blue">Modo A · ratio 4:5</div>
+              </div>
+
+              <!-- Modo B: cuadrado -->
+              <div class="mode-option" data-mode="B" onclick="selectMode(this)">
+                <div class="mode-icon-wrap square">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <rect
+                      x="1"
+                      y="1"
+                      width="18"
+                      height="18"
+                      rx="2"
+                      stroke="#888780"
+                      stroke-width="1.5"
+                    />
+                    <circle
+                      cx="10"
+                      cy="8.5"
+                      r="3.5"
+                      stroke="#888780"
+                      stroke-width="1.3"
+                    />
+                    <path
+                      d="M3 18.5c0-3.31 3.13-6 7-6s7 2.69 7 6"
+                      stroke="#888780"
+                      stroke-width="1.3"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </div>
+                <div class="mode-name">Foto cuadrada</div>
+                <div class="mode-dim" id="dim-B">750 × 750 px</div>
+                <div class="mode-badge badge-gray">Modo B · ratio 1:1</div>
+              </div>
+
+              <!-- Modo: comprimir -->
+              <div
+                class="mode-option"
+                data-mode="compresion"
+                onclick="selectMode(this)"
+              >
+                <div class="mode-icon-wrap wide">
+                  <svg width="24" height="18" viewBox="0 0 24 18" fill="none">
+                    <rect
+                      x="1"
+                      y="4"
+                      width="22"
+                      height="10"
+                      rx="2"
+                      stroke="#888780"
+                      stroke-width="1.5"
+                    />
+                    <path
+                      d="M6 9h12M18 6l3 3-3 3"
+                      stroke="#888780"
+                      stroke-width="1.3"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </div>
+                <div class="mode-name">Solo comprimir</div>
+                <div class="mode-dim">Sin recortar</div>
+                <div class="mode-badge badge-green">Ajusta el peso</div>
+              </div>
+            </div>
+
+            <!-- Opciones avanzadas -->
+            <div class="advanced-toggle" onclick="toggleAdvanced()">
+              <div class="adv-line"></div>
+              <span class="adv-label">Opciones avanzadas</span>
+              <span class="adv-arrow" id="adv-arrow">›</span>
+              <div class="adv-line"></div>
+            </div>
+            <div class="advanced-body" id="advanced-body">
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: 1fr 1fr;
+                  gap: 0.75rem;
+                  margin-top: 0.25rem;
+                "
+              >
+                <div>
+                  <div class="field-label">Dimensiones personalizadas</div>
+                  <div class="input-row" style="margin-top: 4px">
+                    <div style="flex: 1">
+                      <div class="field-label">Ancho px</div>
+                      <input
+                        class="field-input"
+                        id="input-ancho"
+                        type="number"
+                        placeholder="ej. 640"
+                        min="100"
+                        max="2000"
+                      />
+                    </div>
+                    <span class="input-sep">×</span>
+                    <div style="flex: 1">
+                      <div class="field-label">Alto px</div>
+                      <input
+                        class="field-input"
+                        id="input-alto"
+                        type="number"
+                        placeholder="ej. 800"
+                        min="100"
+                        max="2000"
+                      />
+                    </div>
+                  </div>
+                  <div
+                    style="
+                      font-size: 11px;
+                      color: var(--text-3);
+                      margin-top: 4px;
+                    "
+                  >
+                    Dejar vacío para usar el default del modo seleccionado
+                  </div>
+                </div>
+                <div>
+                  <div class="field-label">Rango de peso del archivo (KB)</div>
+                  <div class="input-row" style="margin-top: 4px">
+                    <div style="flex: 1">
+                      <div class="field-label">Mínimo 30</div>
+                      <input
+                        class="field-input"
+                        id="input-kbmin"
+                        type="number"
+                        value="30"
+                        min="30"
+                        max="300"
+                      />
+                    </div>
+                    <span class="input-sep">–</span>
+                    <div style="flex: 1">
+                      <div class="field-label">Máximo 300</div>
+                      <input
+                        class="field-input"
+                        id="input-kbmax"
+                        type="number"
+                        value="300"
+                        min="30"
+                        max="300"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botón procesar -->
+          <button
+            class="btn btn-primary"
+            id="btn-procesar"
+            onclick="iniciarProcesamiento()"
+            disabled
+          >
+            Procesar fotos
+          </button>
+          <div
+            style="
+              font-size: 11px;
+              color: var(--text-3);
+              text-align: center;
+              margin-top: 0.5rem;
+            "
+            id="btn-hint"
+          >
+            Selecciona al menos una foto para continuar
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ══ PÁGINA: MIS LOTES ═══════════════════════════════════════════════ -->
+    <main class="page" id="page-lotes">
+      <div class="search-bar">
+        <div style="font-size: 16px; font-weight: 500" id="lotes-titulo">
+          Cargando lotes...
+        </div>
+        <input
+          class="search-input"
+          id="search-lotes"
+          placeholder="Buscar por nombre..."
+          oninput="filtrarLotes()"
+        />
+      </div>
+      <div class="card" style="padding: 0.5rem 1.25rem" id="lotes-container">
+        <div class="empty">
+          <div class="empty-icon">📂</div>
+          <div class="empty-text">Cargando lotes...</div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ══ PANEL DE PROGRESO (superpuesto sobre nuevo lote) ═══════════════ -->
+    <div id="panel-progreso" style="display: none">
+      <div style="max-width: 90%; margin: 0 auto; padding: 1.75rem 2rem 3rem">
+        <div class="two-col" style="align-items: start">
+          <div>
+            <div class="card">
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  margin-bottom: 0.875rem;
+                "
+              >
+                <div>
+                  <div
+                    style="font-size: 15px; font-weight: 600"
+                    id="prog-nombre"
+                  >
+                    —
+                  </div>
+                  <div
+                    style="
+                      font-size: 12px;
+                      color: var(--text-3);
+                      margin-top: 2px;
+                    "
+                    id="prog-meta"
+                  >
+                    —
+                  </div>
+                </div>
+                <span class="pill pill-proc" id="prog-pill">Procesando...</span>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  font-size: 12px;
+                  color: var(--text-3);
+                  margin-bottom: 4px;
+                "
+              >
+                <span id="prog-texto">Iniciando...</span>
+                <span id="prog-pct" style="font-weight: 600; color: var(--text)"
+                  >0%</span
+                >
+              </div>
+              <div class="progress-wrap">
+                <div
+                  class="progress-fill"
+                  id="prog-bar"
+                  style="width: 0%"
+                ></div>
+              </div>
+              <div class="stat-grid" id="prog-stats">
+                <div class="stat-box">
+                  <div class="stat-val stat-green" id="s-ok">0</div>
+                  <div class="stat-lbl">Exitosas</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-val stat-blue" id="s-total">0</div>
+                  <div class="stat-lbl">Total</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-val stat-amber" id="s-rev">0</div>
+                  <div class="stat-lbl">Para revisar</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-val stat-red" id="s-err">0</div>
+                  <div class="stat-lbl">Con error</div>
+                </div>
+              </div>
+              <div
+                id="prog-hint"
+                style="
+                  font-size: 12px;
+                  color: var(--text-3);
+                  text-align: center;
+                  margin-top: 0.375rem;
+                "
+              >
+                La descarga estará disponible al finalizar
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <div class="card-title">Procesando...</div>
+              <div class="thumb-grid" id="prog-thumbs">
+                <!-- Se generan dinámicamente -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PANEL DE RESULTADO ═══════════════════════════════════════════════ -->
+    <div id="panel-resultado" style="display: none">
+      <div style="max-width: 90%; margin: 0 auto; padding: 1.75rem 2rem 3rem">
+        <div class="two-col" style="align-items: start">
+          <!-- Informe -->
+          <div>
+            <div class="card">
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  margin-bottom: 0.875rem;
+                "
+              >
+                <div>
+                  <div
+                    style="font-size: 15px; font-weight: 600"
+                    id="res-nombre"
+                  >
+                    —
+                  </div>
+                  <div
+                    style="
+                      font-size: 12px;
+                      color: var(--text-3);
+                      margin-top: 2px;
+                    "
+                    id="res-meta"
+                  >
+                    —
+                  </div>
+                </div>
+                <span class="pill pill-done">Completado</span>
+              </div>
+              <div class="stat-grid">
+                <div class="stat-box">
+                  <div class="stat-val" id="r-total">0</div>
+                  <div class="stat-lbl">Total</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-val stat-green" id="r-ok">0</div>
+                  <div class="stat-lbl">Exitosas</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-val stat-amber" id="r-rev">0</div>
+                  <div class="stat-lbl">Para revisar</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-val stat-red" id="r-err">0</div>
+                  <div class="stat-lbl">Con error</div>
+                </div>
+              </div>
+              <div class="progress-wrap">
+                <div
+                  class="progress-fill done"
+                  id="r-bar"
+                  style="width: 0%"
+                ></div>
+              </div>
+              <div
+                style="
+                  font-size: 11px;
+                  color: var(--green-text);
+                  text-align: right;
+                  margin-top: 2px;
+                "
+                id="r-pct-label"
+              >
+                —
+              </div>
+
+              <div class="divider"></div>
+
+              <div id="r-alerts"></div>
+
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem">
+                <button
+                  class="btn btn-success"
+                  id="btn-descargar"
+                  onclick="descargarZip()"
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path
+                      d="M7 1v8M4 6l3 3 3-3M2 11h10"
+                      stroke="white"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  <span id="btn-dl-label">Descargar ZIP</span>
+                </button>
+                <button class="btn btn-outline" onclick="pag_nuevoLote()">
+                  Nuevo lote
+                </button>
+              </div>
+            </div>
+
+            <!-- Config usada -->
+            <div class="card">
+              <div class="card-title">Configuración usada</div>
+              <div class="info-row">
+                <span class="info-key">Modo</span
+                ><span class="info-val" id="r-modo">—</span>
+              </div>
+              <div class="info-row">
+                <span class="info-key">Dimensiones</span
+                ><span class="info-val" id="r-dims">—</span>
+              </div>
+              <div class="info-row">
+                <span class="info-key">Rango de peso</span
+                ><span class="info-val" id="r-peso">—</span>
+              </div>
+              <div class="info-row">
+                <span class="info-key">Duración</span
+                ><span class="info-val" id="r-duracion">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vista previa -->
+          <div>
+            <div class="card">
+              <div class="card-title">Vista previa de resultados</div>
+              <div class="thumb-grid" id="res-thumbs"></div>
+              <div class="thumb-legend">
+                <span
+                  ><span
+                    class="legend-dot"
+                    style="background: var(--green)"
+                  ></span
+                  >Procesada OK</span
+                >
+                <span
+                  ><span
+                    class="legend-dot"
+                    style="background: var(--amber)"
+                  ></span
+                  >Revisar manualmente</span
+                >
+                <span
+                  ><span
+                    class="legend-dot"
+                    style="background: var(--red)"
+                  ></span
+                  >Error</span
+                >
+              </div>
+              <div
+                style="font-size: 11px; color: var(--text-3); margin-top: 5px"
+                id="r-thumb-caption"
+              >
+                —
+              </div>
+            </div>
+
+            <!-- Errores detalle -->
+            <div class="card" id="r-errores-card" style="display: none">
+              <div class="card-title" style="color: var(--red-text)">
+                Archivos con error
+              </div>
+              <div
+                id="r-errores-lista"
+                style="font-size: 12px; color: var(--text-2); line-height: 2"
+              ></div>
+            </div>
+
+            <!-- Para revisar detalle -->
+            <div class="card" id="r-revision-card" style="display: none">
+              <div class="card-title" style="color: var(--amber-text)">
+                Fotos para revisar manualmente
+              </div>
+              <div style="font-size: 12px; color: var(--text-2)">
+                Estas fotos fueron procesadas con encuadre estimado porque el
+                sistema no detectó el rostro con certeza.
+              </div>
+              <div
+                id="r-revision-lista"
+                style="
+                  font-size: 12px;
+                  color: var(--text-2);
+                  line-height: 2;
+                  margin-top: 0.5rem;
+                "
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TOAST ════════════════════════════════════════════════════════════ -->
+    <div id="toast"></div>
+
+    <script>
+      const API = "http://127.0.0.1:8000";
+
+      /* ── Estado global ──────────────────────────────────────────────────── */
+      let archivosSeleccionados = [];
+      let modoActual = "A";
+      let jobActual = null;
+      let pollingInterval = null;
+      let todosLosLotes = [];
+
+      /* ── Navegación ─────────────────────────────────────────────────────── */
+      function showPage(id) {
+        document
+          .querySelectorAll(".page")
+          .forEach((p) => p.classList.remove("active"));
+        document
+          .querySelectorAll(".nav-btn")
+          .forEach((b) => b.classList.remove("active"));
+        document.getElementById("panel-progreso").style.display = "none";
+        document.getElementById("panel-resultado").style.display = "none";
+
+        if (id === "lotes") {
+          document.getElementById("page-lotes").classList.add("active");
+          document.querySelectorAll(".nav-btn")[1].classList.add("active");
+          cargarLotes();
+        } else {
+          console.log("show nuevo");
+          document.getElementById("page-nuevo").style.display = "";
+          document.getElementById("page-nuevo").classList.add("active");
+          document.querySelectorAll(".nav-btn")[0].classList.add("active");
+        }
+      }
+
+      /* ── Nombre automático ──────────────────────────────────────────────── */
+      function generarNombre() {
+        const ahora = new Date();
+        const pad = (n) => String(n).padStart(2, "0");
+        return `lote_${ahora.getFullYear()}-${pad(ahora.getMonth() + 1)}-${pad(ahora.getDate())}_${pad(ahora.getHours())}${pad(ahora.getMinutes())}${pad(ahora.getSeconds())}`;
+      }
+
+      /* ── Selector de archivos ───────────────────────────────────────────── */
+      document.getElementById("file-input").addEventListener("change", (e) => {
+        manejarArchivos(Array.from(e.target.files));
+      });
+
+      const zone = document.getElementById("upload-zone");
+      zone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        zone.classList.add("drag");
+      });
+      zone.addEventListener("dragleave", () => zone.classList.remove("drag"));
+      zone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        zone.classList.remove("drag");
+        manejarArchivos(Array.from(e.dataTransfer.files));
+      });
+
+      function manejarArchivos(files) {
+        const ext = [".jpg", ".jpeg", ".png", ".bmp", ".webp"];
+        // Filtrar solo los archivos válidos
+        const nuevosValidos = files.filter((f) =>
+          ext.some((e) => f.name.toLowerCase().endsWith(e)),
+        );
+        const rechazados = files.length - nuevosValidos.length;
+
+        // Evitar duplicados por nombre y tamaño
+        const existentes = new Set(
+          archivosSeleccionados.map((f) => f.name + ":" + f.size),
+        );
+        const nuevosUnicos = nuevosValidos.filter(
+          (f) => !existentes.has(f.name + ":" + f.size),
+        );
+        archivosSeleccionados = archivosSeleccionados.concat(nuevosUnicos);
+
+        const totalMB =
+          archivosSeleccionados.reduce((s, f) => s + f.size, 0) / (1024 * 1024);
+        document.getElementById("upload-count").textContent =
+          `${archivosSeleccionados.length} foto${archivosSeleccionados.length !== 1 ? "s" : ""} seleccionada${archivosSeleccionados.length !== 1 ? "s" : ""}`;
+        document.getElementById("upload-size").textContent =
+          `${totalMB.toFixed(1)} MB`;
+
+        const lista = document.getElementById("file-list");
+        if (archivosSeleccionados.length > 0) {
+          const muestra = archivosSeleccionados.slice(0, 4);
+          lista.style.display = "block";
+          lista.innerHTML =
+            muestra
+              .map(
+                (f) =>
+                  `<div style="font-size:11px;color:var(--text-3);padding:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+        <span style="color:var(--green-text)">✓</span> ${f.name}
+        <span style="color:var(--text-3)">(${(f.size / 1024).toFixed(0)} KB)</span>
+      </div>`,
+              )
+              .join("") +
+            (archivosSeleccionados.length > 4
+              ? `<div style="font-size:11px;color:var(--text-3);padding:2px 0">... y ${archivosSeleccionados.length - 4} más</div>`
+              : "");
+        } else {
+          lista.style.display = "none";
+        }
+
+        if (rechazados > 0)
+          toast(
+            `${rechazados} archivo${rechazados > 1 ? "s" : ""} rechazado${rechazados > 1 ? "s" : ""} — formato no permitido`,
+            "error",
+          );
+
+        actualizarBotonProcesar();
+      }
+
+      /* ── Modo ───────────────────────────────────────────────────────────── */
+      function selectMode(el) {
+        document
+          .querySelectorAll(".mode-option")
+          .forEach((o) => o.classList.remove("selected"));
+        el.classList.add("selected");
+        modoActual = el.dataset.mode;
+
+        const advBody = document.getElementById("advanced-body");
+        const anchoInput = document.getElementById("input-ancho");
+        const altoInput = document.getElementById("input-alto");
+        if (modoActual === "compresion") {
+          anchoInput.disabled = altoInput.disabled = true;
+          anchoInput.placeholder = altoInput.placeholder = "—";
+        } else {
+          anchoInput.disabled = altoInput.disabled = false;
+          anchoInput.placeholder = modoActual === "A" ? "640" : "750";
+          altoInput.placeholder = modoActual === "A" ? "800" : "750";
+        }
+      }
+
+      /* ── Opciones avanzadas ─────────────────────────────────────────────── */
+      function toggleAdvanced() {
+        const body = document.getElementById("advanced-body");
+        const arrow = document.getElementById("adv-arrow");
+        body.classList.toggle("open");
+        arrow.classList.toggle("open");
+      }
+
+      /* ── Botón procesar ─────────────────────────────────────────────────── */
+      function actualizarBotonProcesar() {
+        const btn = document.getElementById("btn-procesar");
+        const hint = document.getElementById("btn-hint");
+        const ok = archivosSeleccionados.length > 0;
+        btn.disabled = !ok;
+        hint.textContent = ok
+          ? `${archivosSeleccionados.length} foto${archivosSeleccionados.length > 1 ? "s" : ""} listas para procesar`
+          : "Selecciona al menos una foto para continuar";
+      }
+
+      /* ── FLUJO PRINCIPAL ────────────────────────────────────────────────── */
+      async function iniciarProcesamiento() {
+        if (!archivosSeleccionados.length) return;
+
+        const nombre = document.getElementById("input-nombre").value.trim();
+        if (!nombre) {
+          toast("El nombre del lote no puede estar vacío", "error");
+          return;
+        }
+        if (!/^[a-zA-Z0-9_\-]{1,64}$/.test(nombre)) {
+          toast(
+            "El nombre solo puede tener letras, números, guiones bajos y guiones medios",
+            "error",
+          );
+          return;
+        }
+
+        const btn = document.getElementById("btn-procesar");
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Subiendo fotos...';
+
+        try {
+          /* 1. Crear carpeta (si ya existe, continúa igual) */
+          await fetch(`${API}/carpetas/?nombre=${encodeURIComponent(nombre)}`, {
+            method: "POST",
+          }).then((r) => {
+            if (!r.ok && r.status !== 409)
+              throw new Error("Error creando carpeta");
+          });
+
+          /* 2. Subir imágenes en lotes de 20 (maneja cientos de fotos) */
+          const LOTE = 20;
+          for (let i = 0; i < archivosSeleccionados.length; i += LOTE) {
+            const fd = new FormData();
+            archivosSeleccionados
+              .slice(i, i + LOTE)
+              .forEach((f) => fd.append("archivos", f));
+            btn.innerHTML = `<span class="spinner"></span> Subiendo ${Math.min(i + LOTE, archivosSeleccionados.length)} de ${archivosSeleccionados.length}...`;
+            const r = await fetch(
+              `${API}/carpetas/${encodeURIComponent(nombre)}/imagenes`,
+              { method: "POST", body: fd },
+            );
+            if (!r.ok) throw new Error("Error subiendo imágenes");
+          }
+
+          /* 3. Crear job */
+          btn.innerHTML =
+            '<span class="spinner"></span> Iniciando procesamiento...';
+          const ancho =
+            parseInt(document.getElementById("input-ancho").value) || null;
+          const alto =
+            parseInt(document.getElementById("input-alto").value) || null;
+          const kbMin =
+            parseFloat(document.getElementById("input-kbmin").value) || 50;
+          const kbMax =
+            parseFloat(document.getElementById("input-kbmax").value) || 300;
+
+          const jobRes = await fetch(`${API}/jobs/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              carpeta_nombre: nombre,
+              modo: modoActual,
+              ancho: ancho,
+              alto: alto,
+              kb_min: kbMin,
+              kb_max: kbMax,
+            }),
+          });
+          if (!jobRes.ok) throw new Error("Error creando job");
+          const jobData = await jobRes.json();
+          jobActual = jobData.job_id;
+
+          /* 4. Mostrar panel de progreso y empezar polling */
+          mostrarPanelProgreso(nombre, jobData.total_imagenes);
+          startPolling(jobActual);
+        } catch (err) {
+          toast(err.message || "Error iniciando el procesamiento", "error");
+          btn.disabled = false;
+          btn.innerHTML = "Procesar fotos";
+        }
+      }
+
+      /* ── Panel de progreso ──────────────────────────────────────────────── */
+      function mostrarPanelProgreso(nombre, total) {
+        document.getElementById("page-nuevo").style.display = "none";
+        document.getElementById("panel-resultado").style.display = "none";
+        document.getElementById("panel-progreso").style.display = "block";
+
+        const modeLabels = {
+          A: "Foto carnet",
+          B: "Foto cuadrada",
+          compresion: "Solo comprimir",
+        };
+        document.getElementById("prog-nombre").textContent = nombre;
+        document.getElementById("prog-meta").textContent =
+          `${modeLabels[modoActual] || modoActual} · ${total} fotos`;
+        document.getElementById("s-total").textContent = total;
+
+        /* Generar placeholders de miniaturas */
+        const grid = document.getElementById("prog-thumbs");
+        grid.innerHTML = Array(Math.min(10, total))
+          .fill(0)
+          .map(
+            () =>
+              `<div class="thumb"><div style="width:100%;height:100%;background:var(--gray-100);border-radius:5px;animation:pulse 1.2s ease-in-out infinite"></div></div>`,
+          )
+          .join("");
+
+        /* Cargar imágenes reales en el progreso */
+        if (jobActual) {
+          cargarImagenesProgreso(jobActual);
+        }
+      }
+
+      /* ── Cargar imágenes durante el progreso ────────────────────────────── */
+      async function cargarImagenesProgreso(jobId) {
+        try {
+          const res = await fetch(`${API}/resultado/${jobId}/imagenes`);
+          if (!res.ok) return;
+
+          const data = await res.json();
+          const imagenes = data.imagenes || [];
+          const thumbs = document.getElementById("prog-thumbs");
+
+          if (imagenes.length === 0) return;
+
+          // Mostrar TODAS las miniaturas (el grid es scrolleable)
+          thumbs.innerHTML = imagenes
+            .map((img) => {
+              let dotHtml = "";
+              if (img.estado === "ok") {
+                dotHtml = `<div class="thumb-dot dot-ok"><svg width="7" height="7" viewBox="0 0 7 7"><path d="M1.5 3.5l1.5 1.5 2.5-2.5" stroke="white" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`;
+              } else if (img.estado === "revisar") {
+                dotHtml = `<div class="thumb-dot dot-rev"><svg width="7" height="7" viewBox="0 0 7 7"><path d="M3.5 1.5v2M3.5 5v.5" stroke="white" stroke-width="1.1" stroke-linecap="round"/></svg></div>`;
+              } else if (img.estado === "error") {
+                return `<div class="thumb thumb-err-bg" title="${img.nombre}"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 5v4M8 11v.5" stroke="#E24B4A" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="8" r="6" stroke="#E24B4A" stroke-width="1.3"/></svg></div>`;
+              }
+
+              return `<div class="thumb" title="${img.nombre}"><img src="${img.url}" alt="${img.nombre}" style="object-fit:cover;width:100%;height:100%;background:var(--gray-100)" loading="lazy" onload="this.parentElement.style.backgroundColor='transparent'" onerror="this.style.display='none'"/>${dotHtml}</div>`;
+            })
+            .join("");
+        } catch (err) {
+          console.error("Error cargando imágenes en progreso:", err);
+        }
+      }
+
+      /* ── Polling del progreso ───────────────────────────────────────────── */
+      function startPolling(jobId) {
+        if (pollingInterval) clearInterval(pollingInterval);
+        pollingInterval = setInterval(() => pollJob(jobId), 1800);
+        pollJob(jobId); /* llamada inmediata */
+      }
+
+      async function pollJob(jobId) {
+        try {
+          const r = await fetch(`${API}/jobs/${jobId}`);
+          if (!r.ok) return;
+          const job = await r.json();
+          actualizarProgreso(job);
+          if (job.estado === "completado" || job.estado === "fallido") {
+            clearInterval(pollingInterval);
+            if (job.estado === "completado") mostrarResultado(job);
+            else toast("El procesamiento falló con un error crítico", "error");
+          }
+        } catch {
+          /* silencioso — reintenta en el siguiente tick */
+        }
+      }
+
+      function actualizarProgreso(job) {
+        const pct =
+          job.total > 0 ? Math.round((job.procesadas / job.total) * 100) : 0;
+        document.getElementById("prog-bar").style.width = pct + "%";
+        document.getElementById("prog-pct").textContent = pct + "%";
+        document.getElementById("prog-texto").textContent =
+          `${job.procesadas} de ${job.total} fotos`;
+        document.getElementById("s-ok").textContent = job.exitosas;
+        document.getElementById("s-total").textContent = job.total;
+        document.getElementById("s-rev").textContent = job.necesitan_rev;
+        document.getElementById("s-err").textContent = job.con_error;
+
+        /* Actualizar miniaturas en progreso */
+        if (jobActual) {
+          cargarImagenesProgreso(jobActual);
+        }
+      }
+
+      /* ── Panel de resultado ─────────────────────────────────────────────── */
+      function mostrarResultado(job) {
+        document.getElementById("panel-progreso").style.display = "none";
+        document.getElementById("panel-resultado").style.display = "block";
+
+        const modeLabels = {
+          A: "Foto carnet (Modo A)",
+          B: "Foto cuadrada (Modo B)",
+          compresion: "Solo comprimir",
+        };
+        const dimsLabel = job.solo_comprimir
+          ? "Sin cambio"
+          : `${job.ancho || "default"} × ${job.alto || "default"} px`;
+        const total = job.total,
+          ok = job.exitosas;
+        const pct = total > 0 ? Math.round((ok / total) * 100) : 0;
+
+        document.getElementById("res-nombre").textContent = job.carpeta;
+        document.getElementById("res-meta").textContent =
+          `${modeLabels[job.modo] || job.modo}`;
+        document.getElementById("r-total").textContent = total;
+        document.getElementById("r-ok").textContent = ok;
+        document.getElementById("r-rev").textContent = job.necesitan_rev;
+        document.getElementById("r-err").textContent = job.con_error;
+        document.getElementById("r-bar").style.width = pct + "%";
+        document.getElementById("r-pct-label").textContent =
+          `${pct}% tasa de éxito`;
+        document.getElementById("r-modo").textContent =
+          modeLabels[job.modo] || job.modo;
+        document.getElementById("r-dims").textContent = dimsLabel;
+        document.getElementById("r-peso").textContent =
+          `${job.kb_min} – ${job.kb_max} KB`;
+        document.getElementById("btn-dl-label").textContent =
+          `Descargar ZIP (${ok} fotos)`;
+
+        /* Duración */
+        if (job.iniciado_en && job.completado_en) {
+          const seg = Math.round(
+            (new Date(job.completado_en) - new Date(job.iniciado_en)) / 1000,
+          );
+          const min = Math.floor(seg / 60),
+            s = seg % 60;
+          document.getElementById("r-duracion").textContent =
+            min > 0 ? `${min} min ${s} s` : `${s} s`;
+        }
+
+        /* Alertas */
+        const alerts = document.getElementById("r-alerts");
+        alerts.innerHTML = "";
+        if (job.necesitan_rev > 0) {
+          alerts.innerHTML += `<div class="alert alert-amber"><strong>${job.necesitan_rev} foto${job.necesitan_rev > 1 ? "s" : ""} para revisar manualmente</strong> — procesadas con encuadre estimado porque no se detectó el rostro con certeza.</div>`;
+        }
+        if (job.con_error > 0) {
+          alerts.innerHTML += `<div class="alert alert-red"><strong>${job.con_error} foto${job.con_error > 1 ? "s" : ""} con error</strong> — no se pudieron procesar.</div>`;
+        }
+        if (ok === total) {
+          alerts.innerHTML += `<div class="alert alert-green">Todas las fotos se procesaron correctamente.</div>`;
+        }
+
+        /* Cargar imágenes reales del backend */
+        cargarImagenesResultado(jobActual);
+
+        document.getElementById("r-thumb-caption").textContent =
+          `Cargando imágenes...`;
+
+        /* Errores detalle */
+        const errCard = document.getElementById("r-errores-card");
+        if (job.archivos_error && job.archivos_error.length) {
+          errCard.style.display = "block";
+          document.getElementById("r-errores-lista").innerHTML =
+            job.archivos_error
+              .slice(0, 20)
+              .map(
+                (e) =>
+                  `<div><span style="color:var(--red-text);font-family:monospace">${e.archivo}</span> — ${e.razon}</div>`,
+              )
+              .join("") +
+            (job.archivos_error.length > 20
+              ? `<div style="color:var(--text-3)">... y ${job.archivos_error.length - 20} más</div>`
+              : "");
+        } else {
+          errCard.style.display = "none";
+        }
+
+        /* Revisión detalle */
+        const revCard = document.getElementById("r-revision-card");
+        if (job.archivos_rev && job.archivos_rev.length) {
+          revCard.style.display = "block";
+          document.getElementById("r-revision-lista").innerHTML =
+            job.archivos_rev
+              .slice(0, 20)
+              .map(
+                (f) =>
+                  `<div><span style="color:var(--amber-text);font-family:monospace">${f}</span></div>`,
+              )
+              .join("") +
+            (job.archivos_rev.length > 20
+              ? `<div style="color:var(--text-3)">... y ${job.archivos_rev.length - 20} más</div>`
+              : "");
+        } else {
+          revCard.style.display = "none";
+        }
+      }
+
+      /* ── Cargar imágenes reales del resultado ────────────────────────────── */
+      async function cargarImagenesResultado(jobId) {
+        try {
+          const res = await fetch(`${API}/resultado/${jobId}/imagenes`);
+          if (!res.ok) {
+            document.getElementById("r-thumb-caption").textContent =
+              `No se pudieron cargar las imágenes`;
+            return;
+          }
+
+          const data = await res.json();
+          const imagenes = data.imagenes || [];
+          const thumbs = document.getElementById("res-thumbs");
+
+          if (imagenes.length === 0) {
+            thumbs.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--text-3)">Sin imágenes procesadas</div>`;
+            return;
+          }
+
+          // Mostrar TODAS las imágenes (el grid es scrolleable)
+          thumbs.innerHTML = imagenes
+            .map((img) => {
+              let dotHtml = "";
+              if (img.estado === "ok") {
+                dotHtml = `<div class="thumb-dot dot-ok"><svg width="7" height="7" viewBox="0 0 7 7"><path d="M1.5 3.5l1.5 1.5 2.5-2.5" stroke="white" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`;
+              } else if (img.estado === "revisar") {
+                dotHtml = `<div class="thumb-dot dot-rev"><svg width="7" height="7" viewBox="0 0 7 7"><path d="M3.5 1.5v2M3.5 5v.5" stroke="white" stroke-width="1.1" stroke-linecap="round"/></svg></div>`;
+              } else if (img.estado === "error") {
+                return `<div class="thumb thumb-err-bg" title="${img.nombre}"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 5v4M8 11v.5" stroke="#E24B4A" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="8" r="6" stroke="#E24B4A" stroke-width="1.3"/></svg></div>`;
+              }
+
+              return `<div class="thumb" title="${img.nombre}"><img src="${img.url}" alt="${img.nombre}" style="object-fit:cover;width:100%;height:100%" loading="lazy" onload="this.parentElement.style.backgroundColor='transparent'" onerror="this.style.display='none'"/>${dotHtml}</div>`;
+            })
+            .join("");
+
+          document.getElementById("r-thumb-caption").textContent =
+            `Mostrando ${imagenes.length} imágenes (${data.resumen.ok} exitosas, ${data.resumen.revisar} para revisar, ${data.resumen.error} con error)`;
+        } catch (err) {
+          console.error("Error cargando imágenes:", err);
+          document.getElementById("r-thumb-caption").textContent =
+            `Error cargando imágenes`;
+        }
+      }
+
+      /* ── Descarga ZIP ───────────────────────────────────────────────────── */
+      async function descargarZip() {
+        if (!jobActual) return;
+        const btn = document.getElementById("btn-descargar");
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Preparando ZIP...';
+        try {
+          const r = await fetch(`${API}/resultado/${jobActual}/descarga`);
+          if (!r.ok) throw new Error("Error al descargar");
+          const blob = await r.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `resultado_${jobActual.slice(0, 8)}.zip`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          toast("ZIP descargado correctamente", "success");
+        } catch (e) {
+          toast("Error al descargar el ZIP", "error");
+        } finally {
+          btn.disabled = false;
+          const ok = parseInt(document.getElementById("r-ok").textContent) || 0;
+          btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> <span>Descargar ZIP (${ok} fotos)</span>`;
+        }
+      }
+
+      /* ── Pagina nuevo lote ─────────────────────────────────────────────────────── */
+      function pag_nuevoLote() {
+        jobActual = null;
+        archivosSeleccionados = [];
+
+        // Ocultar todos los paneles explícitamente
+        document.getElementById("panel-resultado").style.display = "none";
+        document.getElementById("panel-progreso").style.display = "none";
+
+        // Remover active de todas las páginas
+        document
+          .querySelectorAll(".page")
+          .forEach((p) => p.classList.remove("active"));
+
+        // Mostrar y activar page-nuevo
+        document.getElementById("page-nuevo").style.display = "";
+        document.getElementById("page-nuevo").classList.add("active");
+
+        // Actualizar botones de navegación
+        document
+          .querySelectorAll(".nav-btn")
+          .forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".nav-btn")[0].classList.add("active");
+
+        // Resetear campos
+        document.getElementById("input-nombre").value = generarNombre();
+        document.getElementById("upload-count").textContent =
+          "0 fotos seleccionadas";
+        document.getElementById("upload-size").textContent = "0 MB";
+        document.getElementById("file-list").style.display = "none";
+        document.getElementById("file-input").value = "";
+        actualizarBotonProcesar();
+        const btn = document.getElementById("btn-procesar");
+        btn.innerHTML = "Procesar fotos";
+      }
+
+      /* ── MIS LOTES ──────────────────────────────────────────────────────── */
+      async function cargarLotes() {
+        const container = document.getElementById("lotes-container");
+        container.innerHTML =
+          '<div class="empty"><div class="empty-text">Cargando...</div></div>';
+        try {
+          const r = await fetch(`${API}/jobs/`);
+          const data = await r.json();
+          todosLosLotes = data.jobs || [];
+          renderLotes(todosLosLotes);
+        } catch {
+          container.innerHTML =
+            '<div class="empty"><div class="empty-text">No se pudo conectar con el servidor</div><div class="empty-sub">Verifica que la API esté corriendo en localhost:8000</div></div>';
+        }
+      }
+
+      function filtrarLotes() {
+        const q = document.getElementById("search-lotes").value.toLowerCase();
+        const filtrados = todosLosLotes.filter((j) =>
+          j.carpeta.toLowerCase().includes(q),
+        );
+        renderLotes(filtrados);
+      }
+
+      function renderLotes(jobs) {
+        const container = document.getElementById("lotes-container");
+        const titulo = document.getElementById("lotes-titulo");
+        titulo.textContent = `${jobs.length} lote${jobs.length !== 1 ? "s" : ""}`;
+
+        if (!jobs.length) {
+          container.innerHTML = `<div class="empty">
+      <div class="empty-text">No hay lotes aún</div>
+      <div class="empty-sub">Crea uno nuevo desde la pestaña "Nuevo lote"</div>
+    </div>`;
+          return;
+        }
+
+        const modeLabels = {
+          A: "Foto carnet",
+          B: "Foto cuadrada",
+          compresion: "Solo comprimir",
+        };
+        const estadoConfig = {
+          completado: { pill: "pill-done", label: "Completado" },
+          procesando: { pill: "pill-proc", label: "Procesando" },
+          pendiente: { pill: "pill-pend", label: "Pendiente" },
+          fallido: { pill: "pill-err", label: "Fallido" },
+        };
+
+        container.innerHTML = jobs
+          .map((j) => {
+            const ec = estadoConfig[j.estado] || {
+              pill: "pill-pend",
+              label: j.estado,
+            };
+            const pct =
+              j.total > 0 ? Math.round((j.procesadas / j.total) * 100) : 0;
+            const modo = modeLabels[j.modo] || j.modo;
+            const cuando = j.creado_en
+              ? tiempoRelativo(new Date(j.creado_en))
+              : "";
+            const progBar =
+              j.estado === "procesando"
+                ? `<div class="progress-wrap" style="margin:.375rem 0 0"><div class="progress-fill" style="width:${pct}%"></div></div>`
+                : "";
+
+            let acciones = "";
+            if (j.estado === "completado") {
+              acciones = `
+        <button class="btn btn-outline btn-sm" onclick="verLote('${j.job_id}')">Ver informe</button>
+        <button class="btn btn-success btn-sm" onclick="descargarLote('${j.job_id}','${j.carpeta}')">Descargar</button>
+        <button class="btn btn-warning btn-sm" onclick="eliminarLote('${j.job_id}')">Eliminar</button>`;
+            } else if (j.estado === "procesando") {
+              acciones = `<button class="btn btn-outline btn-sm" onclick="verProgreso('${j.job_id}')">Ver progreso</button>`;
+            } else {
+              acciones = `<button class="btn btn-outline btn-sm" onclick="verLote('${j.job_id}')">Ver</button>`;
+            }
+
+            return `<div class="lote-row">
+      <div class="lote-info">
+        <div class="lote-name">${j.carpeta}</div>
+        <div class="lote-meta">${j.total} fotos · ${modo} · ${cuando}</div>
+        ${progBar}
+      </div>
+      <span class="pill ${ec.pill}">${ec.label}${j.estado === "procesando" ? " · " + pct + "%" : ""}</span>
+      <div class="lote-actions">${acciones}</div>
+    </div>`;
+          })
+          .join("");
+      }
+
+      async function verLote(jobId) {
+        try {
+          const r = await fetch(`${API}/jobs/${jobId}`);
+          const job = await r.json();
+          jobActual = jobId;
+          modoActual = job.modo;
+          showPage("nuevo");
+          document.getElementById("page-nuevo").style.display = "none";
+          document.getElementById("panel-progreso").style.display = "none";
+          document.getElementById("panel-resultado").style.display = "block";
+          mostrarResultado(job);
+        } catch {
+          toast("No se pudo cargar el informe", "error");
+        }
+      }
+
+      async function verProgreso(jobId) {
+        try {
+          const r = await fetch(`${API}/jobs/${jobId}`);
+          const job = await r.json();
+          jobActual = jobId;
+          modoActual = job.modo;
+          showPage("nuevo");
+          document.getElementById("page-nuevo").style.display = "none";
+          mostrarPanelProgreso(job.carpeta, job.total);
+          actualizarProgreso(job);
+          startPolling(jobId);
+        } catch {
+          toast("No se pudo cargar el progreso", "error");
+        }
+      }
+
+      async function descargarLote(jobId, nombre) {
+        try {
+          const r = await fetch(`${API}/resultado/${jobId}/descarga`);
+          if (!r.ok) throw new Error();
+          const blob = await r.blob();
+          const url = URL.createObjectURL(blob);
+          const a = Object.assign(document.createElement("a"), {
+            href: url,
+            download: `resultado_${nombre}.zip`,
+          });
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          toast("ZIP descargado", "success");
+        } catch {
+          toast("Error al descargar", "error");
+        }
+      }
+
+      async function eliminarLote(jobId) {
+        if (!confirm("¿Eliminar este lote? Esta acción no se puede deshacer."))
+          return;
+        try {
+          const r = await fetch(`${API}/jobs/${jobId}`, { method: "DELETE" });
+          if (!r.ok) throw new Error();
+          toast("Lote eliminado", "success");
+          cargarLotes();
+        } catch {
+          toast("Error al eliminar el lote", "error");
+        }
+      }
+
+      /* ── Tiempo relativo ────────────────────────────────────────────────── */
+      function tiempoRelativo(fecha) {
+        const seg = Math.round((Date.now() - fecha) / 1000);
+        if (seg < 60) return "hace un momento";
+        if (seg < 3600) return `hace ${Math.floor(seg / 60)} min`;
+        if (seg < 86400) return `hace ${Math.floor(seg / 3600)} h`;
+        return `hace ${Math.floor(seg / 86400)} días`;
+      }
+
+      /* ── Toast ──────────────────────────────────────────────────────────── */
+      let toastTimer;
+      function toast(msg, type = "") {
+        const el = document.getElementById("toast");
+        el.textContent = msg;
+        el.className = "show" + (type ? " " + type : "");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          el.className = "";
+        }, 3200);
+      }
+
+      /* ── Init ───────────────────────────────────────────────────────────── */
+      document.getElementById("input-nombre").value = generarNombre();
+    </script>
+  </body>
+</html>
