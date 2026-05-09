@@ -45,17 +45,17 @@ class CrearJobRequest(BaseModel):
     ancho : Optional[int] = Field(
         default=None,
         description='Ancho de salida en píxeles. None = usa el default del modo.',
-        ge=100, le=2000,
+        ge=30, le=2000,
         example=None,
     )
     alto : Optional[int] = Field(
         default=None,
         description='Alto de salida en píxeles. None = usa el default del modo.',
-        ge=100, le=2000,
+        ge=30, le=2000,
         example=None,
     )
-    kb_min : float = Field(default=30,  description='Peso mínimo en KB.', ge=30, le=500)
-    kb_max : float = Field(default=300, description='Peso máximo en KB.', ge=300, le=5000)
+    kb_min : float = Field(default=30,  description='Peso mínimo en KB.', ge=5, le=300)
+    kb_max : float = Field(default=100, description='Peso máximo en KB.', ge=5, le=300)
 
     model_config = {
         'json_schema_extra': {
@@ -64,7 +64,7 @@ class CrearJobRequest(BaseModel):
                 'modo'          : 'B',
                 'ancho'         : None,
                 'alto'          : None,
-                'kb_min'        : 30,
+                'kb_min'        : 5,
                 'kb_max'        : 300,
             }
         }
