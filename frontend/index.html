@@ -1889,6 +1889,14 @@
       }
 
       /* ── Selector de archivos ───────────────────────────────────────────── */
+
+      // Cede el hilo principal al navegador por un tick.
+      // Imprescindible en lotes grandes: evita que el tab quede sin respuesta
+      // mientras JS procesa cientos de File objects de golpe.
+      function cederHilo() {
+        return new Promise(resolve => setTimeout(resolve, 0));
+      }
+
       document.getElementById("file-input").addEventListener("change", (e) => {
         manejarArchivos(Array.from(e.target.files));
       });
@@ -1905,15 +1913,24 @@
         manejarArchivos(Array.from(e.dataTransfer.files));
       });
 
-      function manejarArchivos(files) {
+      async function manejarArchivos(files) {
+        if (!files.length) return;
+
+        // Para lotes grandes, mostrar feedback inmediato y ceder el hilo
+        // ANTES de cualquier procesamiento pesado. Sin esto, el navegador
+        // queda bloqueado y puede matar el proceso.
+        if (files.length > 30) {
+          toast(`Procesando ${files.length} archivos…`);
+          await cederHilo();
+        }
+
         const ext = [".jpg", ".jpeg", ".png", ".bmp", ".webp"];
-        // Filtrar solo los archivos válidos
         const nuevosValidos = files.filter((f) =>
           ext.some((e) => f.name.toLowerCase().endsWith(e)),
         );
         const rechazados = files.length - nuevosValidos.length;
 
-        // Evitar duplicados por nombre y tamaño
+        // Deduplicación por nombre + tamaño
         const existentes = new Set(
           archivosSeleccionados.map((f) => f.name + ":" + f.size),
         );
@@ -1930,8 +1947,13 @@
             "error",
           );
 
+        // Ceder hilo antes de manipular el DOM de preview
+        await cederHilo();
         renderizarPreviewSeleccion();
         actualizarBotonProcesar();
+
+        if (files.length > 30)
+          toast(`${archivosSeleccionados.length} fotos listas`, "success");
       }
 
       /* ── Modo ───────────────────────────────────────────────────────────── */
@@ -1975,49 +1997,133 @@
       }
 
       /* ── Preview de selección ───────────────────────────────────────────── */
-      function renderizarPreviewSeleccion() {
+
+      // Cuántas miniaturas se crean por tick de JS.
+      // Mantiene el hilo principal libre: el navegador puede renderizar
+      // y responder entre cada chunk, sin congelar la pestaña.
+      const RENDER_CHUNK = 30;
+
+      // Contador de generación: si se lanza un nuevo render mientras uno anterior
+      // sigue en progreso (chunked), el antiguo se aborta.
+      let _renderGen = 0;
+
+      // Blob URLs activos — se revocan al limpiar para liberar file handles del SO.
+      let _blobUrls = [];
+      function _limpiarBlobUrls() {
+        _blobUrls.forEach(u => URL.revokeObjectURL(u));
+        _blobUrls = [];
+      }
+
+      // Crea un elemento de miniatura y asigna el handler de quitar via JS
+      // (evita problemas con nombres de archivo con caracteres especiales)
+      function _crearItemPreview(archivo, idx) {
+        const blobUrl = URL.createObjectURL(archivo);
+        _blobUrls.push(blobUrl);
+
+        const item = document.createElement('div');
+        item.className   = 'preview-item';
+        item.dataset.idx = idx;
+
+        const img = document.createElement('img');
+        img.src     = blobUrl;
+        img.alt     = archivo.name;
+        img.loading = 'lazy';
+
+        const btn = document.createElement('button');
+        btn.className = 'preview-remove';
+        btn.title     = 'Quitar';
+        btn.textContent = '×';
+        btn.onclick   = () => quitarArchivo(idx);
+
+        const lbl = document.createElement('span');
+        lbl.className   = 'preview-fname';
+        lbl.textContent = archivo.name;
+
+        item.appendChild(img);
+        item.appendChild(btn);
+        item.appendChild(lbl);
+        return item;
+      }
+
+      async function renderizarPreviewSeleccion() {
         const contenedor = document.getElementById('previewSeleccion');
-        const info = document.getElementById('seleccionInfo');
-        const contador = document.getElementById('seleccionContador');
+        const info       = document.getElementById('seleccionInfo');
+        const contador   = document.getElementById('seleccionContador');
 
         if (!archivosSeleccionados || archivosSeleccionados.length === 0) {
           if (info) info.style.display = 'none';
+          _limpiarBlobUrls();
           return;
         }
 
         if (info) info.style.display = '';
         const totalMB = (archivosSeleccionados.reduce((s, f) => s + f.size, 0) / 1048576).toFixed(1);
         if (contador) contador.textContent = `${archivosSeleccionados.length} fotos seleccionadas · ${totalMB} MB`;
-
         if (!contenedor) return;
+
+        _limpiarBlobUrls();
         contenedor.innerHTML = '';
 
-        archivosSeleccionados.forEach((archivo, idx) => {
-          const item = document.createElement('div');
-          item.className = 'preview-item';
-          item.innerHTML = `
-            <img src="" alt="${archivo.name}" loading="lazy">
-            <button class="preview-remove" onclick="quitarArchivo(${idx})" title="Quitar">×</button>
-            <span class="preview-fname">${archivo.name}</span>
-          `;
-          const img = item.querySelector('img');
-          const reader = new FileReader();
-          reader.onload = e => { img.src = e.target.result; };
-          reader.readAsDataURL(archivo);
-          contenedor.appendChild(item);
-        });
+        const gen = ++_renderGen; // marca esta generación
+
+        // Renderizar en bloques — cede el hilo entre cada uno para no bloquear el tab
+        for (let i = 0; i < archivosSeleccionados.length; i += RENDER_CHUNK) {
+          if (_renderGen !== gen) return; // render más nuevo en progreso → abortar éste
+
+          const frag = document.createDocumentFragment();
+          const hasta = Math.min(i + RENDER_CHUNK, archivosSeleccionados.length);
+          for (let j = i; j < hasta; j++) {
+            frag.appendChild(_crearItemPreview(archivosSeleccionados[j], j));
+          }
+          contenedor.appendChild(frag); // inserción única por chunk = menos reflows
+
+          if (hasta < archivosSeleccionados.length) await cederHilo();
+        }
       }
 
+      // Elimina una foto directamente del DOM sin re-renderizar todo el grid.
+      // Solo actualiza los data-idx de los elementos posteriores al eliminado.
       function quitarArchivo(idx) {
+        const contenedor = document.getElementById('previewSeleccion');
+
+        // Revocar blob URL de este item y quitarlo del array
+        if (_blobUrls[idx]) { URL.revokeObjectURL(_blobUrls[idx]); _blobUrls.splice(idx, 1); }
         archivosSeleccionados.splice(idx, 1);
-        renderizarPreviewSeleccion();
+
+        // Eliminar el elemento DOM directamente
+        const item = contenedor?.querySelector(`.preview-item[data-idx="${idx}"]`);
+        if (item) item.remove();
+
+        // Decrementar data-idx y re-asignar onclick en todos los items posteriores
+        contenedor?.querySelectorAll('.preview-item[data-idx]').forEach(el => {
+          const i = parseInt(el.dataset.idx);
+          if (i > idx) {
+            el.dataset.idx = i - 1;
+            const btn = el.querySelector('.preview-remove');
+            if (btn) { const ni = i - 1; btn.onclick = () => quitarArchivo(ni); }
+          }
+        });
+
+        // Actualizar contador y estado
+        const totalMB = (archivosSeleccionados.reduce((s, f) => s + f.size, 0) / 1048576).toFixed(1);
+        const contador = document.getElementById('seleccionContador');
+        if (!archivosSeleccionados.length) {
+          const info = document.getElementById('seleccionInfo');
+          if (info) info.style.display = 'none';
+        } else if (contador) {
+          contador.textContent = `${archivosSeleccionados.length} fotos seleccionadas · ${totalMB} MB`;
+        }
         actualizarEstadoZona();
         actualizarBotonProcesar();
       }
 
       function quitarTodasFotos() {
         archivosSeleccionados = [];
-        renderizarPreviewSeleccion();
+        _limpiarBlobUrls();
+        const contenedor = document.getElementById('previewSeleccion');
+        if (contenedor) contenedor.innerHTML = '';
+        const info = document.getElementById('seleccionInfo');
+        if (info) info.style.display = 'none';
         actualizarEstadoZona();
         actualizarBotonProcesar();
       }
@@ -2060,14 +2166,17 @@
               throw new Error("Error creando carpeta");
           });
 
-          /* 2. Subir imágenes en lotes de 20 (maneja cientos de fotos) */
-          const LOTE = 20;
+          /* 2. Subir imágenes en lotes de 10.
+                LOTE=10 reduce la memoria pico por request a ~200 MB máx.
+                El await fetch ya cede el hilo entre lotes (GC puede correr). */
+          const LOTE = 10;
           for (let i = 0; i < archivosSeleccionados.length; i += LOTE) {
             const fd = new FormData();
             archivosSeleccionados
               .slice(i, i + LOTE)
               .forEach((f) => fd.append("archivos", f));
-            btn.innerHTML = `<span class="spinner"></span> Subiendo ${Math.min(i + LOTE, archivosSeleccionados.length)} de ${archivosSeleccionados.length}...`;
+            const subidas = Math.min(i + LOTE, archivosSeleccionados.length);
+            btn.innerHTML = `<span class="spinner"></span> Subiendo ${subidas} de ${archivosSeleccionados.length}…`;
             const r = await fetch(
               `${API}/carpetas/${encodeURIComponent(nombre)}/imagenes`,
               { method: "POST", body: fd },
@@ -2424,6 +2533,8 @@
         document.querySelectorAll(".nav-btn")[0].classList.add("active");
 
         // Resetear campos
+        archivosSeleccionados = [];
+        _limpiarBlobUrls();
         document.getElementById("input-nombre").value = generarNombre();
         document.getElementById("upload-count").textContent =
           "0 fotos seleccionadas";
