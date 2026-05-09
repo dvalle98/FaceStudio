@@ -1,26 +1,51 @@
-# evitar subir archivos de configuración de entorno.env
+# ── Entorno ──────────────────────────────────────────────────────
 .env
 venv/
-# ignorar archivos de configuración de IDE
+.venv/
+
+# ── IDE ──────────────────────────────────────────────────────────
 .vscode/
 .idea/
-# ignorar archivos de dependencias
+
+# ── Dependencias y builds ────────────────────────────────────────
 node_modules/
-# ignorar archivos de construccióndist/
+dist/
 build/
+__pycache__/
+*.py[cod]
 
-# ignorar el contenido de la carpeta modelos
+# ── Modelos DNN ───────────────────────────────────────────────────
+# Los modelos se descargan localmente con setup_modelos.py.
+# La carpeta se mantiene en el repo; su contenido no.
 modelos/*
-# ignorar todo el contenido de las carpetas que almacenan imagenes
-imagenes-entrada/
-imagenes-salida/
+!modelos/.gitkeep
 
-# ignorar el contenido de las carpetas projects, entrada, salida y zips dentro de storage pero mantener las carpetas porque son necesarias para la aplicación
+# ── Storage — carpetas de runtime ────────────────────────────────
+# Se mantiene la estructura de carpetas (gracias a .gitkeep).
+# Se ignora todo el contenido generado en tiempo de ejecución:
+# imágenes subidas, imágenes procesadas, ZIPs y la base de datos de jobs.
+
+storage/jobs.json
+
+storage/*
+!storage/.gitkeep
+!storage/projects
+!storage/entrada
+!storage/salida
+!storage/zips
+
 storage/projects/*
 !storage/projects/.gitkeep
+
 storage/entrada/*
 !storage/entrada/.gitkeep
+
 storage/salida/*
 !storage/salida/.gitkeep
+
 storage/zips/*
 !storage/zips/.gitkeep
+
+# ── Carpetas legacy ───────────────────────────────────────────────
+imagenes-entrada/
+imagenes-salida/
