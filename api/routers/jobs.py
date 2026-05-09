@@ -93,6 +93,7 @@ def _ejecutar_job(job_id: str) -> None:
     salida  = os.path.join(STORAGE_ROOT, job['carpeta_nombre'], SUBDIR_SALIDA)
     os.makedirs(salida, exist_ok=True)
 
+    # Listar solo archivos con extensión de imagen válida, ordenados alfabéticamente
     archivos = sorted([
         f for f in os.listdir(entrada)
         if os.path.isfile(os.path.join(entrada, f))
@@ -105,6 +106,7 @@ def _ejecutar_job(job_id: str) -> None:
     archivos_error: list = []
     archivos_rev:   list = []
 
+    # Procesar cada imagen secuencialmente (puede optimizarse con procesamiento paralelo si es necesario)
     for i, archivo in enumerate(archivos, start=1):
         ruta_entrada = os.path.join(entrada, archivo)
         ruta_salida  = os.path.join(salida, os.path.splitext(archivo)[0] + '.jpg')
@@ -113,6 +115,7 @@ def _ejecutar_job(job_id: str) -> None:
             with open(ruta_entrada, 'rb') as f:
                 img_bytes = f.read()
 
+            # Dependiendo del modo, se llama a la función correspondiente del pipeline.
             if job['solo_comprimir']:
                 res = pipeline_module.solo_comprimir(
                     img_bytes, job['kb_min'], job['kb_max'])

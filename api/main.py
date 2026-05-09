@@ -27,11 +27,16 @@ from .routers import carpetas, jobs, resultado
 os.makedirs(STORAGE_ROOT, exist_ok=True)
 
 # ── Aplicación ────────────────────────────────────────────────────────────────
+# ROOT_PATH permite que FastAPI sepa que está montado bajo un sub-path en el
+# reverse proxy (ej: /facestudio). Afecta la generación del OpenAPI schema,
+# las URLs de /docs y /redoc, y los redirects internos.
+# En desarrollo local se deja vacío (por defecto).
 app = FastAPI(
     title     = 'API de Procesamiento de Fotos — Reconocimiento Facial',
     version   = '1.0.0',
     docs_url  = '/docs',
     redoc_url = '/redoc',
+    root_path = os.environ.get('ROOT_PATH', ''),
 )
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
@@ -80,7 +85,7 @@ if os.path.isdir(_FRONTEND_DIR):
 
 @app.get('/health', tags=['General'], summary='Health check')
 def health():
-    return {'status': 'ok'}
+    return {'status': 'ok', 'API': 'FotoProcess'}
 
 
 @app.get('/', include_in_schema=False)

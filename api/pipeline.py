@@ -40,7 +40,7 @@ import cv2
 import io
 import os
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 from dataclasses import dataclass, field
 from typing import Optional, Tuple, List
 
@@ -139,45 +139,60 @@ def _bytes_a_bgr(imagen_bytes: bytes) -> Optional[np.ndarray]:
     normalizado como si fuera JPEG.
 
     Pasos:
-      1. Decodifica con IMREAD_UNCHANGED para preservar el canal alpha si existe.
-      2. Si tiene 4 canales (BGRA/RGBA): aplana el alpha sobre fondo blanco.
+      1. Abre con Pillow y aplica ImageOps.exif_transpose() para corregir la
+         orientación EXIF antes de cualquier procesamiento.
+         OpenCV ignora el tag de orientación EXIF, lo que causa que fotos tomadas
+         con teléfonos aparezcan rotadas 90° o 180°. Pillow sí lo respeta.
+      2. Convierte a array BGR de OpenCV según el modo de color.
+      3. Si tiene canal alpha (RGBA): aplana sobre fondo blanco.
          Fórmula: pixel = alpha * pixel + (1 - alpha) * 255
-         Así los píxeles transparentes quedan blancos, no negros.
-      3. Si tiene 1 canal (escala de grises): convierte a BGR.
-      4. Re-codifica el resultado como JPEG en memoria y lo decodifica de vuelta.
-         Este paso es la normalización de formato: JPEG no soporta transparencia
-         ni metadatos especiales de PNG, BMP o WEBP, por lo que el resultado
-         es siempre un array BGR uniforme equivalente a haber partido de un JPG.
-         Esto resuelve el problema de fotos PNG con fondo blanco que incluyen
-         zonas vacías o metadatos que afectan el encuadre del pipeline.
+      4. Re-codifica como JPEG en memoria y decodifica de vuelta.
+         Normaliza el formato: elimina metadatos, aplana transparencias,
+         garantiza un array BGR puro equivalente a un JPG estándar.
     """
-    # ── 1. Decodificar preservando alpha ─────────────────────────────────────
-    arr = np.frombuffer(imagen_bytes, dtype=np.uint8)
-    img = cv2.imdecode(arr, cv2.IMREAD_UNCHANGED)
+    # ── 1. Abrir con Pillow y corregir orientación EXIF ──────────────────────
+    # ImageOps.exif_transpose lee el tag Orientation (0x0112) y rota/voltea
+    # los píxeles para que queden en la orientación visual correcta.
+    # Cubre los 8 casos del estándar EXIF: normal, 90°CW, 180°, 90°CCW y sus
+    # variantes con espejo horizontal.
+    try:
+        pil = Image.open(io.BytesIO(imagen_bytes))
+        pil = ImageOps.exif_transpose(pil)   # ← corrige rotación de teléfonos
+    except Exception:
+        pil = None
 
-    if img is None:
-        return None
+    # ── 2. Convertir Pillow → array BGR para OpenCV ──────────────────────────
+    if pil is not None:
+        mode = pil.mode
+        if mode == 'RGBA':
+            img = cv2.cvtColor(np.array(pil), cv2.COLOR_RGBA2BGRA)
+        elif mode == 'RGB':
+            img = cv2.cvtColor(np.array(pil), cv2.COLOR_RGB2BGR)
+        elif mode == 'L':
+            img = cv2.cvtColor(np.array(pil), cv2.COLOR_GRAY2BGR)
+        else:
+            # Modos poco comunes (P, CMYK, etc.) → convertir a RGB primero
+            img = cv2.cvtColor(np.array(pil.convert('RGB')), cv2.COLOR_RGB2BGR)
+    else:
+        # Fallback: decodificación directa con OpenCV (sin corrección EXIF)
+        arr = np.frombuffer(imagen_bytes, dtype=np.uint8)
+        img = cv2.imdecode(arr, cv2.IMREAD_UNCHANGED)
+        if img is None:
+            return None
 
-    # ── 2. Aplanar canal alpha sobre fondo blanco ────────────────────────────
+    # ── 3. Aplanar canal alpha sobre fondo blanco ────────────────────────────
     if img.ndim == 3 and img.shape[2] == 4:
         bgr   = img[:, :, :3].astype(np.float32)
         alpha = img[:, :, 3:].astype(np.float32) / 255.0
         fondo = np.ones_like(bgr) * 255.0
         img   = (alpha * bgr + (1.0 - alpha) * fondo).clip(0, 255).astype(np.uint8)
 
-    # ── 3. Escala de grises a BGR ────────────────────────────────────────────
-    elif img.ndim == 2:
-        img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-
-    # ── 4. Normalizar formato: re-codificar como JPEG y decodificar de vuelta
-    #       Esto garantiza que el array resultante es equivalente a un JPG:
-    #       - Sin metadatos de formato
-    #       - Sin canales extra
-    #       - Fondo blanco uniforme donde antes había transparencia o vacío
-    #       Calidad 95 para no degradar la imagen en este paso interno. ────────
+    # ── 4. Normalizar formato: re-codificar como JPEG y decodificar de vuelta ─
+    #       Elimina metadatos residuales, garantiza 3 canales BGR, fondo blanco
+    #       uniforme. Calidad 95 para no degradar en este paso interno.
     ok, buf = cv2.imencode('.jpg', img, [cv2.IMWRITE_JPEG_QUALITY, 95])
     if not ok:
-        return img   # si falla la re-codificación, devolver el array original
+        return img   # si falla la re-codificación, devolver el array tal cual
 
     img_normalizada = cv2.imdecode(buf, cv2.IMREAD_COLOR)
     return img_normalizada if img_normalizada is not None else img
@@ -289,9 +304,10 @@ def _detectar_fallback_centrado(imagen_bgr: np.ndarray) -> Tuple[tuple, str]:
 # ══════════════════════════════════════════════════════════════════
 
 def _detectar_rostro(imagen_bgr: np.ndarray) -> Tuple[tuple, str, bool, bool]:
-    rostro, metodo = _detectar_haarcascade(imagen_bgr)
-    if rostro is not None:
-        return rostro, metodo, False, False
+    # modelo Haarcascade (rápido pero menos robusto) — recomendado para fotos tipo selfie
+    #rostro, metodo = _detectar_haarcascade(imagen_bgr)
+    #if rostro is not None:
+    #    return rostro, metodo, False, False
 
     rostro, metodo = _detectar_dnn(imagen_bgr)
     if rostro is not None:

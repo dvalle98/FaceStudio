@@ -6,7 +6,7 @@ services:
     image: procesador-imagenes:latest
     container_name: procesador-imagenes
     ports:
-      - "8001:8001"
+      - "8001:8001" # host:8001 → contenedor:8001 (Nginx hace proxy a 127.0.0.1:8001)
     volumes:
       # Ambas carpetas viven en el repositorio clonado en el servidor.
       # El contenedor las monta pero nunca las contiene.
@@ -15,6 +15,8 @@ services:
       - ./modelos:/app/modelos
     environment:
       - PYTHONUNBUFFERED=1
+      # Sub-path donde Nginx sirve la app (debe coincidir con location en nginx.conf)
+      - ROOT_PATH=/facestudio
       # STORAGE_PATH le dice a la app dónde escribir dentro del contenedor.
       # Debe coincidir con la ruta DERECHA del bind mount de arriba.
       - STORAGE_PATH=/app/storage

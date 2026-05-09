@@ -2,6 +2,9 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FaceStudio — Procesador de imágenes</title>
     <style>
@@ -14,40 +17,74 @@
         padding: 0;
       }
       :root {
-        --blue: #185fa5;
-        --blue-light: #e6f1fb;
-        --blue-mid: #b5d4f4;
-        --blue-text: #0c447c;
-        --green: #3b6d11;
-        --green-light: #eaf3de;
-        --green-text: #27500a;
-        --amber: #854f0b;
-        --amber-light: #faeeda;
-        --amber-text: #633806;
-        --red: #a32d2d;
-        --red-light: #fcebeb;
-        --red-text: #791f1f;
-        --gray-50: #f1efe8;
-        --gray-100: #d3d1c7;
-        --gray-400: #888780;
-        --gray-600: #5f5e5a;
-        --gray-900: #2c2c2a;
-        --text: #1a1a1a;
-        --text-2: #555;
-        --text-3: #888;
-        --border: rgba(0, 0, 0, 0.1);
-        --border-2: rgba(0, 0, 0, 0.18);
-        --bg: #f5f6f8;
+        --blue: #2563eb;
+        --blue-light: #eff6ff;
+        --blue-mid: #bfdbfe;
+        --blue-text: #1d4ed8;
+        --green: #16a34a;
+        --green-light: #f0fdf4;
+        --green-text: #15803d;
+        --amber: #d97706;
+        --amber-light: #fffbeb;
+        --amber-text: #b45309;
+        --red: #dc2626;
+        --red-light: #fef2f2;
+        --red-text: #b91c1c;
+
+        --bg: #f8fafc;
         --surface: #ffffff;
-        --surface-2: #f5f6f8;
-        --radius: 10px;
-        --radius-sm: 6px;
+        --surface-2: #f1f5f9;
+        --border: #e2e8f0;
+        --border-light: #f1f5f9;
+        --text: #0f172a;
+        --text-2: #475569;
+        --text-3: #94a3b8;
+        --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+        --shadow: 0 4px 16px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.04);
+        --radius: 12px;
+        --radius-sm: 8px;
+        --topbar-h: 56px;
+
+        /* legacy aliases for existing code */
+        --gray-50: #f1f5f9;
+        --gray-100: #e2e8f0;
+        --gray-400: #94a3b8;
+        --gray-600: #475569;
+        --gray-900: #0f172a;
+        --border-2: #cbd5e1;
+      }
+
+      [data-theme="dark"] {
+        --bg: #0f172a;
+        --surface: #1e293b;
+        --surface-2: #334155;
+        --border: #334155;
+        --border-light: #1e293b;
+        --text: #f8fafc;
+        --text-2: #94a3b8;
+        --text-3: #64748b;
+        --shadow-sm: 0 1px 3px rgba(0,0,0,.3);
+        --shadow: 0 4px 16px rgba(0,0,0,.35);
+        --blue-light: #1e3a5f;
+        --blue-mid: #1e40af;
+        --green-light: #052e16;
+        --green-text: #4ade80;
+        --amber-light: #431407;
+        --amber-text: #fbbf24;
+        --red-light: #3b0a0a;
+        --red-text: #f87171;
+        --gray-50: #1e293b;
+        --gray-100: #334155;
+        --gray-400: #64748b;
+        --gray-600: #94a3b8;
+        --gray-900: #f8fafc;
+        --border-2: #475569;
       }
       html {
         font-size: 15px;
       }
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         background: var(--bg);
         color: var(--text);
         min-height: 100vh;
@@ -57,15 +94,16 @@
       /* ── Topbar ─────────────────────────────────────────────────────────── */
       .topbar {
         background: var(--surface);
-        border-bottom: 0.5px solid var(--border);
+        border-bottom: 1px solid var(--border);
         padding: 0 2rem;
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        gap: 16px;
         height: 56px;
         position: sticky;
         top: 0;
         z-index: 100;
+        box-shadow: var(--shadow-sm);
       }
       .logo {
         display: flex;
@@ -141,14 +179,24 @@
       /* ── Tarjetas ───────────────────────────────────────────────────────── */
       .card {
         background: var(--surface);
-        border: 0.5px solid var(--border);
+        border: 1px solid var(--border);
         border-radius: var(--radius);
-        padding: 1.25rem;
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
+        transition: box-shadow .15s ease;
         margin-bottom: 1rem;
+      }
+      .card:hover {
+        box-shadow: var(--shadow);
       }
       .card:last-child {
         margin-bottom: 0;
       }
+      @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      .card { animation: fadeUp .2s ease both; }
       .card-title {
         font-size: 13px;
         font-weight: 600;
@@ -562,6 +610,100 @@
         background: var(--red-light);
         border-color: #f09595;
       }
+      /* Hover overlay con ojo en miniaturas de resultado */
+      .thumb-item {
+        cursor: zoom-in;
+      }
+      .thumb-eye-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background .2s ease;
+        border-radius: inherit;
+        z-index: 1;
+      }
+      .thumb-eye-overlay svg {
+        opacity: 0;
+        transform: scale(.8);
+        transition: opacity .2s ease, transform .2s ease;
+        color: white;
+        filter: drop-shadow(0 1px 3px rgba(0,0,0,.6));
+      }
+      .thumb-item:hover .thumb-eye-overlay {
+        background: rgba(0,0,0,.38);
+      }
+      .thumb-item:hover .thumb-eye-overlay svg {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      /* ── Lightbox ───────────────────────────────────────────────────────── */
+      .lightbox-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.88);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        padding: 24px;
+        animation: fadeIn .18s ease;
+      }
+      .lightbox-inner {
+        position: relative;
+        max-width: min(900px, 96vw);
+        max-height: 92vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+      .lightbox-img-wrap {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .lightbox-img-wrap img {
+        max-width: 100%;
+        max-height: calc(92vh - 80px);
+        border-radius: var(--radius);
+        box-shadow: 0 24px 80px rgba(0,0,0,.6);
+        object-fit: contain;
+      }
+      .lightbox-caption {
+        color: rgba(255,255,255,.75);
+        font-size: 12px;
+        text-align: center;
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .lightbox-close {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.15);
+        border: 1px solid rgba(255,255,255,.25);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background .15s;
+        z-index: 10001;
+      }
+      .lightbox-close:hover {
+        background: rgba(255,255,255,.28);
+      }
 
       /* ── Lista de lotes ─────────────────────────────────────────────────── */
       .lote-row {
@@ -592,8 +734,39 @@
       }
       .lote-actions {
         display: flex;
-        gap: 5px;
+        gap: 4px;
         flex-shrink: 0;
+      }
+      /* Botones de icono para acciones de lote */
+      .btn-icon-lote {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text-2);
+        cursor: pointer;
+        transition: background .15s, color .15s, border-color .15s;
+        padding: 0;
+        flex-shrink: 0;
+      }
+      .btn-icon-lote:hover {
+        background: var(--surface-2);
+        color: var(--text);
+        border-color: var(--border-2);
+      }
+      .btn-icon-lote.danger:hover {
+        background: var(--red-light);
+        color: var(--red);
+        border-color: var(--red);
+      }
+      .btn-icon-lote.success:hover {
+        background: var(--green-light);
+        color: var(--green);
+        border-color: var(--green);
       }
 
       /* ── Alerta ─────────────────────────────────────────────────────────── */
@@ -725,6 +898,125 @@
         }
       }
 
+      /* ── Modal confirm ──────────────────────────────────────────────────── */
+      .modal-overlay {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,.45);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 9999;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+      }
+      .modal-dialog {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 32px 28px;
+        max-width: 360px; width: 90%;
+        box-shadow: 0 24px 64px rgba(0,0,0,.22);
+        animation: scaleIn .15s ease;
+        text-align: center;
+      }
+      .modal-icon-wrap { margin-bottom: 16px; }
+      .modal-title { font-size: 17px; font-weight: 600; color: var(--text); margin: 0 0 8px; }
+      .modal-msg { font-size: 14px; color: var(--text-2); margin: 0 0 24px; }
+      .modal-actions { display: flex; gap: 10px; justify-content: center; }
+      .modal-actions .btn { min-width: 100px; }
+      @keyframes scaleIn {
+        from { transform: scale(.93); opacity: 0; }
+        to   { transform: scale(1);   opacity: 1; }
+      }
+
+      /* ── Filter bar ─────────────────────────────────────────────────────── */
+      .filter-bar {
+        display: flex; gap: 6px; flex-wrap: wrap;
+        margin-bottom: 14px; padding-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+      }
+      .filter-btn {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 5px 12px; border-radius: 20px;
+        border: 1px solid var(--border);
+        background: var(--surface); color: var(--text-2);
+        font-size: 13px; font-weight: 500; cursor: pointer;
+        transition: all .15s;
+        font-family: inherit;
+      }
+      .filter-btn:hover:not(.active) { background: var(--surface-2); }
+      .filter-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+      .filter-count {
+        font-size: 11px; font-weight: 700;
+        background: rgba(255,255,255,.25); border-radius: 10px;
+        padding: 1px 6px; min-width: 18px; text-align: center;
+      }
+      .filter-btn:not(.active) .filter-count { background: var(--surface-2); color: var(--text-3); }
+
+      /* ── Preview selección ──────────────────────────────────────────────── */
+      .seleccion-header {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 10px;
+      }
+      .seleccion-count { font-size: 13px; font-weight: 500; color: var(--text-2); }
+      .btn-link {
+        background: none; border: none; color: var(--blue); font-size: 12px;
+        cursor: pointer; padding: 0; text-decoration: underline;
+        font-family: inherit;
+      }
+      .preview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 8px;
+        max-height: 260px;
+        overflow-y: auto;
+      }
+      .preview-item {
+        position: relative;
+        aspect-ratio: 1;
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        background: var(--surface-2);
+      }
+      .preview-item img {
+        width: 100%; height: 100%; object-fit: cover;
+        display: block;
+      }
+      .preview-remove {
+        position: absolute; top: 4px; right: 4px;
+        background: rgba(0,0,0,.6); color: white;
+        border: none; border-radius: 50%;
+        width: 20px; height: 20px; font-size: 13px; line-height: 1;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        transition: background .1s;
+      }
+      .preview-remove:hover { background: rgba(220,38,38,.85); }
+      .preview-fname {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        background: linear-gradient(transparent, rgba(0,0,0,.65));
+        color: white; font-size: 9px; padding: 12px 4px 4px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+
+      /* ── Topbar controls ────────────────────────────────────────────────── */
+      .topbar-controls { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+      .ctrl-btn {
+        display: flex; align-items: center; justify-content: center; gap: 4px;
+        height: 32px; min-width: 40px; padding: 0 10px;
+        border: 1px solid var(--border); border-radius: 8px;
+        background: var(--surface-2); color: var(--text-2);
+        font-size: 12px; font-weight: 600; cursor: pointer;
+        transition: background .15s, color .15s, border-color .15s;
+        font-family: inherit;
+      }
+      .ctrl-btn:hover { background: var(--border); color: var(--text); }
+
+      /* ── Dots for filter bar ────────────────────────────────────────────── */
+      .dot {
+        display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+      }
+      .dot-green { background: var(--green); }
+      .dot-amber { background: var(--amber); }
+      .dot-red { background: var(--red); }
+
       /* ── Empty state ────────────────────────────────────────────────────── */
       .empty {
         text-align: center;
@@ -741,6 +1033,33 @@
       .empty-sub {
         font-size: 12px;
         margin-top: 4px;
+      }
+      /* ── Responsive ─────────────────────────────────────────────────────── */
+      @media (max-width: 768px) {
+        .main-grid,
+        .layout-grid,
+        .two-col { grid-template-columns: 1fr !important; }
+
+        .topbar { padding: 0 16px; gap: 8px; }
+        .topbar-brand span:last-child { display: none; }
+        .nav-btn { font-size: 13px; padding: 6px 10px; }
+        .topbar-controls { gap: 6px; }
+
+        .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        .thumb-grid,
+        [class*="thumb-grid"] { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important; }
+        .preview-grid { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); }
+
+        .filter-bar { gap: 4px; }
+        .filter-btn { padding: 4px 10px; font-size: 12px; }
+
+        .modal-dialog { padding: 24px 20px; }
+      }
+
+      @media (max-width: 480px) {
+        .card { padding: 16px; }
+        .topbar-nav { gap: 2px; }
+        .nav-btn span { display: none; }
       }
     </style>
   </head>
@@ -793,12 +1112,18 @@
           <div class="logo-sub">Procesador de imágenes</div>
         </div>
       </div>
-      <nav class="nav">
+      <nav class="nav topbar-nav">
         <button class="nav-btn active" onclick="pag_nuevoLote()">
           Nuevo lote
         </button>
         <button class="nav-btn" onclick="showPage('lotes')">Mis lotes</button>
       </nav>
+      <div class="topbar-controls">
+        <button id="btnTheme" class="ctrl-btn" onclick="toggleTheme()" title="Modo oscuro / claro">
+          <svg id="iconSun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg id="iconMoon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
     </header>
 
     <!-- ══ PÁGINA: NUEVO LOTE ══════════════════════════════════════════════ -->
@@ -862,8 +1187,16 @@
               <span id="upload-count">0 fotos seleccionadas</span>
               <span id="upload-size">0 MB</span>
             </div>
-            <!-- Lista de archivos seleccionados (máx 5 visibles) -->
-            <div id="file-list" style="margin-top: 0.5rem; display: none"></div>
+            <!-- Preview grid de archivos seleccionados -->
+            <div id="seleccionInfo" style="display:none; margin-top: 0.75rem">
+              <div class="seleccion-header">
+                <span id="seleccionContador" class="seleccion-count"></span>
+                <button class="btn-link" onclick="quitarTodasFotos()">Quitar todas</button>
+              </div>
+              <div id="previewSeleccion" class="preview-grid"></div>
+            </div>
+            <!-- Legacy file-list kept hidden for JS compat -->
+            <div id="file-list" style="display: none"></div>
           </div>
         </div>
 
@@ -1328,6 +1661,27 @@
           <div>
             <div class="card">
               <div class="card-title">Vista previa de resultados</div>
+              <div class="filter-bar" id="filtroResultados" style="display:none">
+                <button class="filter-btn active" data-filtro="todos" onclick="filtrarResultados('todos')">
+                  Todas
+                  <span class="filter-count" id="cntTodos">0</span>
+                </button>
+                <button class="filter-btn" data-filtro="ok" onclick="filtrarResultados('ok')">
+                  <span class="dot dot-green"></span>
+                  Exitosas
+                  <span class="filter-count" id="cntOk">0</span>
+                </button>
+                <button class="filter-btn" data-filtro="revisar" onclick="filtrarResultados('revisar')">
+                  <span class="dot dot-amber"></span>
+                  Revisar
+                  <span class="filter-count" id="cntRevisar">0</span>
+                </button>
+                <button class="filter-btn" data-filtro="error" onclick="filtrarResultados('error')">
+                  <span class="dot dot-red"></span>
+                  Errores
+                  <span class="filter-count" id="cntError">0</span>
+                </button>
+              </div>
               <div class="thumb-grid" id="res-thumbs"></div>
               <div class="thumb-legend">
                 <span
@@ -1398,8 +1752,104 @@
     <!-- ══ TOAST ════════════════════════════════════════════════════════════ -->
     <div id="toast"></div>
 
+    <!-- ══ LIGHTBOX ═════════════════════════════════════════════════════════ -->
+    <div id="lightbox" class="lightbox-overlay" style="display:none" onclick="if(event.target===this||event.target.closest('.lightbox-overlay')===event.target)cerrarLightbox()">
+      <button class="lightbox-close" onclick="cerrarLightbox()" title="Cerrar (Esc)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="lightbox-inner" onclick="event.stopPropagation()">
+        <div class="lightbox-img-wrap">
+          <img id="lightbox-img" src="" alt="">
+        </div>
+        <div class="lightbox-caption" id="lightbox-caption"></div>
+      </div>
+    </div>
+
+    <!-- ══ MODAL DE CONFIRMACIÓN ════════════════════════════════════════════ -->
+    <div id="modalConfirm" class="modal-overlay" style="display:none" onclick="if(event.target===this)cerrarModal()">
+      <div class="modal-dialog">
+        <div class="modal-icon-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--red)"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </div>
+        <h3 class="modal-title" id="modalTitle">¿Eliminar lote?</h3>
+        <p class="modal-msg" id="modalMsg">Esta acción es permanente y no se puede deshacer.</p>
+        <div class="modal-actions">
+          <button class="btn btn-outline" id="modalCancel" onclick="cerrarModal()">Cancelar</button>
+          <button class="btn" id="modalConfirmBtn" style="background:var(--red);color:white;border-color:var(--red)">Eliminar</button>
+        </div>
+      </div>
+    </div>
+
     <script>
-      const API = "http://127.0.0.1:8000";
+      // ── Tema ──────────────────────────────────────────────────────────────────
+      const temaGuardado = localStorage.getItem('tema') || 'light';
+      if (temaGuardado === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+
+      function toggleTheme() {
+        const esDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        document.documentElement.setAttribute('data-theme', esDark ? 'light' : 'dark');
+        localStorage.setItem('tema', esDark ? 'light' : 'dark');
+        document.getElementById('iconSun').style.display  = esDark ? '' : 'none';
+        document.getElementById('iconMoon').style.display = esDark ? 'none' : '';
+      }
+
+      // Init icon state
+      document.addEventListener('DOMContentLoaded', () => {
+        const esDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        document.getElementById('iconSun').style.display  = esDark ? 'none' : '';
+        document.getElementById('iconMoon').style.display = esDark ? '' : 'none';
+      });
+
+      // ── Modal confirm ──────────────────────────────────────────────────────────
+      function mostrarModalConfirm(titulo, mensaje, onConfirm) {
+        document.getElementById('modalTitle').textContent = titulo;
+        document.getElementById('modalMsg').textContent = mensaje;
+        const overlay = document.getElementById('modalConfirm');
+        overlay.style.display = 'flex';
+        const btn = document.getElementById('modalConfirmBtn');
+        btn.onclick = () => { cerrarModal(); onConfirm(); };
+        document.getElementById('modalCancel').textContent = 'Cancelar';
+        btn.textContent = 'Eliminar';
+      }
+      function cerrarModal() {
+        document.getElementById('modalConfirm').style.display = 'none';
+      }
+      // Close on Escape
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+          cerrarModal();
+          cerrarLightbox();
+        }
+      });
+
+      // ── Lightbox ──────────────────────────────────────────────────────────────
+      function abrirLightbox(url, nombre) {
+        const lb = document.getElementById('lightbox');
+        const img = document.getElementById('lightbox-img');
+        const cap = document.getElementById('lightbox-caption');
+        img.src = url;
+        img.alt = nombre;
+        cap.textContent = nombre;
+        lb.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+      function cerrarLightbox() {
+        const lb = document.getElementById('lightbox');
+        if (lb) lb.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+
+      // Detecta automáticamente la base de la API:
+      // - localhost / 127.0.0.1 (desarrollo) → sin prefijo, uvicorn en la raíz
+      // - cualquier otro host (producción)    → toma el primer segmento del path
+      //   ej: https://ia.innovacloud.co/facestudio/ → API = "/facestudio"
+      const API = (() => {
+        if (['127.0.0.1', 'localhost'].includes(window.location.hostname)) return '';
+        const seg = window.location.pathname.split('/').filter(Boolean)[0];
+        return seg ? '/' + seg : '';
+      })();
 
       /* ── Estado global ──────────────────────────────────────────────────── */
       let archivosSeleccionados = [];
@@ -1472,33 +1922,7 @@
         );
         archivosSeleccionados = archivosSeleccionados.concat(nuevosUnicos);
 
-        const totalMB =
-          archivosSeleccionados.reduce((s, f) => s + f.size, 0) / (1024 * 1024);
-        document.getElementById("upload-count").textContent =
-          `${archivosSeleccionados.length} foto${archivosSeleccionados.length !== 1 ? "s" : ""} seleccionada${archivosSeleccionados.length !== 1 ? "s" : ""}`;
-        document.getElementById("upload-size").textContent =
-          `${totalMB.toFixed(1)} MB`;
-
-        const lista = document.getElementById("file-list");
-        if (archivosSeleccionados.length > 0) {
-          const muestra = archivosSeleccionados.slice(0, 4);
-          lista.style.display = "block";
-          lista.innerHTML =
-            muestra
-              .map(
-                (f) =>
-                  `<div style="font-size:11px;color:var(--text-3);padding:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-        <span style="color:var(--green-text)">✓</span> ${f.name}
-        <span style="color:var(--text-3)">(${(f.size / 1024).toFixed(0)} KB)</span>
-      </div>`,
-              )
-              .join("") +
-            (archivosSeleccionados.length > 4
-              ? `<div style="font-size:11px;color:var(--text-3);padding:2px 0">... y ${archivosSeleccionados.length - 4} más</div>`
-              : "");
-        } else {
-          lista.style.display = "none";
-        }
+        actualizarEstadoZona();
 
         if (rechazados > 0)
           toast(
@@ -1506,6 +1930,7 @@
             "error",
           );
 
+        renderizarPreviewSeleccion();
         actualizarBotonProcesar();
       }
 
@@ -1547,6 +1972,62 @@
         hint.textContent = ok
           ? `${archivosSeleccionados.length} foto${archivosSeleccionados.length > 1 ? "s" : ""} listas para procesar`
           : "Selecciona al menos una foto para continuar";
+      }
+
+      /* ── Preview de selección ───────────────────────────────────────────── */
+      function renderizarPreviewSeleccion() {
+        const contenedor = document.getElementById('previewSeleccion');
+        const info = document.getElementById('seleccionInfo');
+        const contador = document.getElementById('seleccionContador');
+
+        if (!archivosSeleccionados || archivosSeleccionados.length === 0) {
+          if (info) info.style.display = 'none';
+          return;
+        }
+
+        if (info) info.style.display = '';
+        const totalMB = (archivosSeleccionados.reduce((s, f) => s + f.size, 0) / 1048576).toFixed(1);
+        if (contador) contador.textContent = `${archivosSeleccionados.length} fotos seleccionadas · ${totalMB} MB`;
+
+        if (!contenedor) return;
+        contenedor.innerHTML = '';
+
+        archivosSeleccionados.forEach((archivo, idx) => {
+          const item = document.createElement('div');
+          item.className = 'preview-item';
+          item.innerHTML = `
+            <img src="" alt="${archivo.name}" loading="lazy">
+            <button class="preview-remove" onclick="quitarArchivo(${idx})" title="Quitar">×</button>
+            <span class="preview-fname">${archivo.name}</span>
+          `;
+          const img = item.querySelector('img');
+          const reader = new FileReader();
+          reader.onload = e => { img.src = e.target.result; };
+          reader.readAsDataURL(archivo);
+          contenedor.appendChild(item);
+        });
+      }
+
+      function quitarArchivo(idx) {
+        archivosSeleccionados.splice(idx, 1);
+        renderizarPreviewSeleccion();
+        actualizarEstadoZona();
+        actualizarBotonProcesar();
+      }
+
+      function quitarTodasFotos() {
+        archivosSeleccionados = [];
+        renderizarPreviewSeleccion();
+        actualizarEstadoZona();
+        actualizarBotonProcesar();
+      }
+
+      function actualizarEstadoZona() {
+        const totalMB = archivosSeleccionados.reduce((s, f) => s + f.size, 0) / (1024 * 1024);
+        document.getElementById("upload-count").textContent =
+          `${archivosSeleccionados.length} foto${archivosSeleccionados.length !== 1 ? "s" : ""} seleccionada${archivosSeleccionados.length !== 1 ? "s" : ""}`;
+        document.getElementById("upload-size").textContent =
+          `${totalMB.toFixed(1)} MB`;
       }
 
       /* ── FLUJO PRINCIPAL ────────────────────────────────────────────────── */
@@ -1864,17 +2345,22 @@
           thumbs.innerHTML = imagenes
             .map((img) => {
               let dotHtml = "";
+              const estadoAttr = img.estado === "revisar" ? "revisar" : img.estado === "error" ? "error" : "ok";
               if (img.estado === "ok") {
                 dotHtml = `<div class="thumb-dot dot-ok"><svg width="7" height="7" viewBox="0 0 7 7"><path d="M1.5 3.5l1.5 1.5 2.5-2.5" stroke="white" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`;
               } else if (img.estado === "revisar") {
                 dotHtml = `<div class="thumb-dot dot-rev"><svg width="7" height="7" viewBox="0 0 7 7"><path d="M3.5 1.5v2M3.5 5v.5" stroke="white" stroke-width="1.1" stroke-linecap="round"/></svg></div>`;
               } else if (img.estado === "error") {
-                return `<div class="thumb thumb-err-bg" title="${img.nombre}"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 5v4M8 11v.5" stroke="#E24B4A" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="8" r="6" stroke="#E24B4A" stroke-width="1.3"/></svg></div>`;
+                return `<div class="thumb thumb-item thumb-err-bg" data-estado="error" title="${img.nombre}"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 5v4M8 11v.5" stroke="#E24B4A" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="8" r="6" stroke="#E24B4A" stroke-width="1.3"/></svg></div>`;
               }
 
-              return `<div class="thumb" title="${img.nombre}"><img src="${img.url}" alt="${img.nombre}" style="object-fit:cover;width:100%;height:100%" loading="lazy" onload="this.parentElement.style.backgroundColor='transparent'" onerror="this.style.display='none'"/>${dotHtml}</div>`;
+              const urlEsc = img.url.replace(/'/g, "\\'");
+              const nomEsc = img.nombre.replace(/'/g, "\\'");
+              return `<div class="thumb thumb-item" data-estado="${estadoAttr}" title="${img.nombre}" onclick="abrirLightbox('${urlEsc}','${nomEsc}')"><img src="${img.url}" alt="${img.nombre}" style="object-fit:cover;width:100%;height:100%" loading="lazy" onload="this.parentElement.style.backgroundColor='transparent'" onerror="this.style.display='none'"/><div class="thumb-eye-overlay"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>${dotHtml}</div>`;
             })
             .join("");
+
+          actualizarContadoresFiltro(data.resumen.ok || 0, data.resumen.revisar || 0, data.resumen.error || 0);
 
           document.getElementById("r-thumb-caption").textContent =
             `Mostrando ${imagenes.length} imágenes (${data.resumen.ok} exitosas, ${data.resumen.revisar} para revisar, ${data.resumen.error} con error)`;
@@ -1943,10 +2429,12 @@
           "0 fotos seleccionadas";
         document.getElementById("upload-size").textContent = "0 MB";
         document.getElementById("file-list").style.display = "none";
+        const selInfo = document.getElementById("seleccionInfo");
+        if (selInfo) selInfo.style.display = "none";
         document.getElementById("file-input").value = "";
         actualizarBotonProcesar();
         const btn = document.getElementById("btn-procesar");
-        btn.innerHTML = "Procesar fotos";
+        btn.textContent = "Procesar fotos";
       }
 
       /* ── MIS LOTES ──────────────────────────────────────────────────────── */
@@ -2015,16 +2503,21 @@
                 ? `<div class="progress-wrap" style="margin:.375rem 0 0"><div class="progress-fill" style="width:${pct}%"></div></div>`
                 : "";
 
+            // SVG icons for action buttons
+            const icoEye      = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+            const icoDl       = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
+            const icoTrash    = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+
             let acciones = "";
             if (j.estado === "completado") {
               acciones = `
-        <button class="btn btn-outline btn-sm" onclick="verLote('${j.job_id}')">Ver informe</button>
-        <button class="btn btn-success btn-sm" onclick="descargarLote('${j.job_id}','${j.carpeta}')">Descargar</button>
-        <button class="btn btn-warning btn-sm" onclick="eliminarLote('${j.job_id}')">Eliminar</button>`;
+        <button class="btn-icon-lote" onclick="verLote('${j.job_id}')" title="Ver informe">${icoEye}</button>
+        <button class="btn-icon-lote success" onclick="descargarLote('${j.job_id}','${j.carpeta}')" title="Descargar ZIP">${icoDl}</button>
+        <button class="btn-icon-lote danger" onclick="eliminarLote('${j.job_id}')" title="Eliminar lote">${icoTrash}</button>`;
             } else if (j.estado === "procesando") {
-              acciones = `<button class="btn btn-outline btn-sm" onclick="verProgreso('${j.job_id}')">Ver progreso</button>`;
+              acciones = `<button class="btn-icon-lote" onclick="verProgreso('${j.job_id}')" title="Ver progreso">${icoEye}</button>`;
             } else {
-              acciones = `<button class="btn btn-outline btn-sm" onclick="verLote('${j.job_id}')">Ver</button>`;
+              acciones = `<button class="btn-icon-lote" onclick="verLote('${j.job_id}')" title="Ver">${icoEye}</button>`;
             }
 
             return `<div class="lote-row">
@@ -2093,16 +2586,44 @@
       }
 
       async function eliminarLote(jobId) {
-        if (!confirm("¿Eliminar este lote? Esta acción no se puede deshacer."))
-          return;
-        try {
-          const r = await fetch(`${API}/jobs/${jobId}`, { method: "DELETE" });
-          if (!r.ok) throw new Error();
-          toast("Lote eliminado", "success");
-          cargarLotes();
-        } catch {
-          toast("Error al eliminar el lote", "error");
-        }
+        mostrarModalConfirm(
+          '¿Eliminar lote?',
+          'Esta acción es permanente y no se puede deshacer.',
+          async () => {
+            try {
+              const r = await fetch(`${API}/jobs/${jobId}`, { method: "DELETE" });
+              if (!r.ok) throw new Error();
+              toast("Lote eliminado", "success");
+              cargarLotes();
+            } catch {
+              toast("Error al eliminar el lote", "error");
+            }
+          }
+        );
+        return;
+      }
+
+      /* ── Filtro de resultados ───────────────────────────────────────────── */
+      function filtrarResultados(filtro) {
+        document.querySelectorAll('#filtroResultados .filter-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.filtro === filtro);
+        });
+        document.querySelectorAll('.thumb-item').forEach(el => {
+          const estado = el.dataset.estado || 'ok';
+          el.style.display = (filtro === 'todos' || estado === filtro) ? '' : 'none';
+        });
+      }
+
+      function actualizarContadoresFiltro(exitosas, revisar, errores) {
+        const total = exitosas + revisar + errores;
+        const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        set('cntTodos', total);
+        set('cntOk', exitosas);
+        set('cntRevisar', revisar);
+        set('cntError', errores);
+        const bar = document.getElementById('filtroResultados');
+        if (bar) bar.style.display = total > 0 ? 'flex' : 'none';
+        filtrarResultados('todos');
       }
 
       /* ── Tiempo relativo ────────────────────────────────────────────────── */
