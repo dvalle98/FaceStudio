@@ -142,8 +142,11 @@ def listar_imagenes(job_id: str, request: Request):
     archivos_error_set = set(e['archivo'] for e in job.get('archivos_error', []))
     archivos_rev_set = set(job.get('archivos_rev', []))
 
-    # Obtener la URL base desde el request (para evitar problemas de puerto)
-    base_url = request.url.scheme + "://" + request.url.netloc
+    # Respetar el proto real del cliente (HTTPS detrás de Nginx).
+    # request.url.scheme siempre es "http" porque Nginx hace proxy por HTTP interno.
+    # X-Forwarded-Proto contiene el proto original ("https" en producción).
+    scheme   = request.headers.get('x-forwarded-proto', request.url.scheme)
+    base_url = scheme + "://" + request.url.netloc
 
     # Clasificar cada imagen
     imagenes = []
