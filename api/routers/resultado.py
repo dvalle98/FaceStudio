@@ -142,11 +142,13 @@ def listar_imagenes(job_id: str, request: Request):
     archivos_error_set = set(e['archivo'] for e in job.get('archivos_error', []))
     archivos_rev_set = set(job.get('archivos_rev', []))
 
-    # Respetar el proto real del cliente (HTTPS detrás de Nginx).
-    # request.url.scheme siempre es "http" porque Nginx hace proxy por HTTP interno.
-    # X-Forwarded-Proto contiene el proto original ("https" en producción).
-    scheme   = request.headers.get('x-forwarded-proto', request.url.scheme)
-    base_url = scheme + "://" + request.url.netloc
+    # Construir base_url correctamente detrás de Nginx:
+    #   - scheme:    X-Forwarded-Proto ("https") en lugar de request.url.scheme ("http")
+    #   - root_path: el prefijo del sub-path ("/facestudio") que Nginx ya stripeó
+    #                antes de hacer proxy, pero que el navegador sí necesita en la URL.
+    scheme    = request.headers.get('x-forwarded-proto', request.url.scheme)
+    root_path = request.scope.get('root_path', '').rstrip('/')
+    base_url  = f"{scheme}://{request.url.netloc}{root_path}"
 
     # Clasificar cada imagen
     imagenes = []
