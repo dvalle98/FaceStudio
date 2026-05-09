@@ -15,7 +15,7 @@ modelos/*
 imagenes-entrada/
 imagenes-salida/
 
-# ignorar lo que esta dentro de las carpetas projects, entrada, salida y zips dentro de storage pero no omitir las carpetas vacias
+# ignorar el contenido de las carpetas projects, entrada, salida y zips dentro de storage pero mantener las carpetas porque son necesarias para la aplicación
 storage/projects/*
 !storage/projects/.gitkeep
 storage/entrada/*
