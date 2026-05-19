@@ -208,9 +208,6 @@ def detectar_dnn(imagen_bgr):
     encuentra ninguno por encima de DNN_CONFIANZA_MIN.
     """
     if not os.path.exists(MODELO_PROTOTXT) or not os.path.exists(MODELO_CAFFEMODEL):
-        #ejecutar setup_modelos.py para descargar los modelos necesarios
-        import setup_modelos
-        setup_modelos.setup_modelos() #intenta descargar los modelos si no se encuentran, pero si falla devuelve error
         return None, 'dnn_modelos_no_encontrados (ejecuta setup_modelos.py)'
 
     try:

@@ -46,21 +46,4 @@ for nombre, url in ARCHIVOS.items():
     except Exception as e:
         print(f'  [ERROR]  {nombre}: {e}')
 
-print('\nListo. Ya puedes usar el procesador')
-
-def setup_modelos():
-    """Funcion para descargar los modelos DNN si no se encuentran, pero si falla devuelve error."""
-    for nombre, url in ARCHIVOS.items():
-        ruta = os.path.join(CARPETA_MODELOS, nombre)
-        if os.path.exists(ruta):
-            print(f'  [YA EXISTE]  {nombre}')
-            continue
-        print(f'  Descargando {nombre} ...')
-        try:
-            urllib.request.urlretrieve(url, ruta)
-            kb = os.path.getsize(ruta) / 1024
-            print(f'  [OK]  {nombre}  ({kb:.0f} KB)')
-        except Exception as e:
-            print(f'  [ERROR]  {nombre}: {e}')
-
-    print('\nListo. Ya puedes usar el procesador')
+print('\nListo. Ya puedes usar procesador6.py')
